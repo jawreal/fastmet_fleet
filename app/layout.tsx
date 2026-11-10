@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-// Step 1: remove Geist and Geist_Mono if you don't need them anymore
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-// Step 2: create the font once at module level.
-// `variable` generates the CSS variable --font-inter at build time.
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+interface IRoot {
+  children: React.ReactNode;
+}
 
 export const metadata: Metadata = {
   title: "FastMet Fleet",
@@ -15,10 +14,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+const inter = Inter({ variable: "--font-sans", subsets: ["latin"] });
+
+export default function RootLayout({ children }: Readonly<IRoot>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={inter.variable}>
+      <body>{children}</body>
     </html>
   );
 }
