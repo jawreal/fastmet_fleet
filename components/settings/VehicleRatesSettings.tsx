@@ -1,55 +1,39 @@
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+"use client";
 
-const vehicleRates = [
-  { type: "Motorcycle", plan: "Motorcycle", capacity: "20 kg", baseFare: "₱80" },
-  { type: "Sedan", plan: "Sedan to L300", capacity: "200 kg", baseFare: "₱300" },
-  { type: "L300 FB Van", plan: "Sedan to L300", capacity: "1,000 kg", baseFare: "₱1,200" },
-  { type: "4W Closed Van", plan: "Truck", capacity: "2,500 kg", baseFare: "₱2,600" },
+import { Badge } from "@/components/ui/badge";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PaginatedTable, type DataTableColumn } from "@/components/PaginatedTable";
+import { formatPesos } from "@/lib/reportData";
+
+export interface VehicleRate {
+  type: string;
+  plan: "Motorcycle" | "Sedan to L300" | "Truck";
+  capacityKg: number;
+  baseFare: number;
+}
+
+const vehicleRates: VehicleRate[] = [
+  { type: "Motorcycle", plan: "Motorcycle", capacityKg: 20, baseFare: 80 },
+  { type: "Sedan", plan: "Sedan to L300", capacityKg: 200, baseFare: 300 },
+  { type: "L300 FB Van", plan: "Sedan to L300", capacityKg: 1000, baseFare: 1200 },
+  { type: "4W Closed Van", plan: "Truck", capacityKg: 2500, baseFare: 2600 },
+];
+
+const columns: DataTableColumn<VehicleRate>[] = [
+  { id: "type", header: "Type", cell: (rate) => rate.type, className: "font-medium" },
+  { id: "plan", header: "Subscription plan", cell: (rate) => <Badge variant="secondary" className="rounded-md">{rate.plan}</Badge> },
+  { id: "capacity", header: "Capacity", cell: (rate) => `${rate.capacityKg.toLocaleString("en-PH")} kg`, className: "text-right" },
+  { id: "baseFare", header: "Base fare", cell: (rate) => formatPesos(rate.baseFare), className: "text-right" },
 ];
 
 export function VehicleRatesSettings() {
   return (
-    <Card aria-labelledby="vehicle-rates-heading" className="min-w-0 pb-0">
-      <CardHeader>
+    <Card aria-labelledby="vehicle-rates-heading" className="min-w-0 gap-0 pb-0">
+      <CardHeader className="border-b">
         <CardTitle id="vehicle-rates-heading">Vehicle types and sample rates</CardTitle>
         <CardDescription>Reference fares used for booking estimates.</CardDescription>
       </CardHeader>
-      <Table aria-labelledby="vehicle-rates-heading" className="min-w-[32rem]">
-        <TableHeader className="border-t bg-muted/30">
-          <TableRow>
-            <TableHead scope="col" className="px-4 text-muted-foreground">Type</TableHead>
-            <TableHead scope="col" className="px-4 text-muted-foreground">Subscription plan</TableHead>
-            <TableHead scope="col" className="px-4 text-right text-muted-foreground">Capacity</TableHead>
-            <TableHead scope="col" className="px-4 text-right text-muted-foreground">Base fare</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {vehicleRates.map(({ type, plan, capacity, baseFare }) => (
-            <TableRow key={type}>
-              <TableHead scope="row" className="px-4 font-medium">{type}</TableHead>
-              <TableCell className="px-4 py-3">
-                <Badge variant="secondary" className="rounded-md">{plan}</Badge>
-              </TableCell>
-              <TableCell className="px-4 py-3 text-right tabular-nums">{capacity}</TableCell>
-              <TableCell className="px-4 py-3 text-right tabular-nums">{baseFare}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <PaginatedTable data={vehicleRates} columns={columns} getRowId={(rate) => rate.type} labelledBy="vehicle-rates-heading" className="min-w-lg" />
     </Card>
   );
 }

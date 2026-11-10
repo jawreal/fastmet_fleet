@@ -10,9 +10,11 @@ export default function Page() {
       <div className="@container mx-auto flex w-full max-w-5xl flex-col gap-6">
         <div className="space-y-1 border-b pb-4">
           <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-          <p className="text-sm text-muted-foreground">Company, payouts and data</p>
+          <p className="text-sm text-muted-foreground">
+            Company, payouts and data
+          </p>
         </div>
-        <div className="grid min-w-0 grid-cols-1 gap-6 @min-[48rem]:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-6 @3xl:grid-cols-2">
           <CompanySettings />
           <PayoutsSettings />
         </div>
