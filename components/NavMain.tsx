@@ -11,15 +11,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
+import { INavigationLinks } from "@/lib/navLinks";
 
-export function NavMain({
-  label,
-  items,
-}: Readonly<{
-  label: string;
-  items: { title: string; url: string; icon?: React.ReactNode }[];
-}>) {
+export function NavMain({ label, items }: INavigationLinks) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
 
@@ -30,28 +25,28 @@ export function NavMain({
       </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => {
+          {items.map(({ url, title, icon: Icon }) => {
             const isActive =
-              pathname === item.url || pathname.startsWith(`${item.url}/`);
+              pathname === url || pathname.startsWith(`${url}/`);
             return (
-              <SidebarMenuItem key={item.url}>
+              <SidebarMenuItem key={url}>
                 <SidebarMenuButton
-                  tooltip={item.title}
+                  tooltip={title}
                   isActive={isActive}
                   className={cn(
                     // 1. Base: same height as before, rounded, muted text, smooth state changes
                     "h-9 rounded-lg px-2.5 text-sm text-sidebar-foreground/70 transition-colors",
 
                     // 2. Hover: a faint wash only (black on light, white on dark)
-                    "hover:bg-black/[0.04] hover:text-sidebar-foreground",
-                    "dark:hover:bg-white/[0.04]",
+                    "hover:bg-black/4 hover:text-sidebar-foreground",
+                    "dark:hover:bg-white/4",
 
                     // 3. Active (light mode): faint black wash, 1px ring, white top highlight
-                    "data-active:bg-black/[0.05] data-active:font-medium data-active:text-sidebar-foreground",
+                    "data-active:bg-black/5 data-active:font-medium data-active:text-sidebar-foreground",
                     "data-active:shadow-[inset_0_0_0_1px_rgb(0_0_0/0.06),inset_0_1px_0_rgb(255_255_255/0.6)]",
 
                     // 4. Active (dark mode): faint white wash, 1px ring, subtle top highlight
-                    "dark:data-active:bg-white/[0.06]",
+                    "dark:data-active:bg-white/6",
                     "dark:data-active:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08),inset_0_1px_0_rgb(255_255_255/0.07)]",
 
                     // 5. Accent only on the icon: item.icon renders an <svg> directly inside the button
@@ -59,7 +54,7 @@ export function NavMain({
                   )}
                   render={
                     <Link
-                      href={item.url}
+                      href={url}
                       aria-current={isActive ? "page" : undefined}
                     />
                   }
@@ -67,8 +62,8 @@ export function NavMain({
                     if (isMobile) setOpenMobile(false);
                   }}
                 >
-                  {item.icon}
-                  <span>{item.title}</span>
+                  <Icon />
+                  <span>{title}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );
