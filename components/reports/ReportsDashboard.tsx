@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DownloadIcon, PlusIcon } from "lucide-react";
+import { DownloadIcon } from "lucide-react";
+import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -98,10 +99,7 @@ export function ReportsDashboard() {
           <Badge variant="outline" className="gap-1.5">
             <span className="size-1.5 rounded-full bg-emerald-500" /> Synced
           </Badge>
-          <Button type="button">
-            <PlusIcon data-icon="inline-start" />
-            New booking
-          </Button>
+          <NewBookingDialog />
         </div>
       </div>
 
