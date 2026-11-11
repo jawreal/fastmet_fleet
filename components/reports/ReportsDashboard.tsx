@@ -106,28 +106,29 @@ export function ReportsDashboard() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          role="group"
-          aria-label="Report period"
-          className="flex max-w-full flex-wrap gap-1 rounded-lg bg-muted p-1"
+        <fieldset
+          className="m-0 min-w-0 max-w-full border-0 p-0"
         >
-          {reportPeriods.map((period) => (
-            <Button
-              key={period}
-              type="button"
-              variant="ghost"
-              aria-pressed={selectedPeriod === period}
-              onClick={() => setSelectedPeriod(period)}
-              className={cn(
-                "text-muted-foreground",
-                selectedPeriod === period &&
-                  "bg-background text-foreground shadow-xs hover:bg-background",
-              )}
-            >
-              {period}
-            </Button>
-          ))}
-        </div>
+          <legend className="sr-only">Report period</legend>
+          <div className="flex max-w-full overflow-x-auto border-b border-border">
+            {reportPeriods.map((period) => (
+              <Button
+                key={period}
+                type="button"
+                variant="ghost"
+                aria-pressed={selectedPeriod === period}
+                onClick={() => setSelectedPeriod(period)}
+                className={cn(
+                  "h-8 rounded-none rounded-t-md border-0 border-b-2 border-transparent px-3 text-muted-foreground active:not-aria-[haspopup]:translate-y-0",
+                  selectedPeriod === period &&
+                    "border-primary bg-primary/10 text-yellow-600 hover:bg-primary/15 hover:text-primary",
+                )}
+              >
+                {period}
+              </Button>
+            ))}
+          </div>
+        </fieldset>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline">
             <DownloadIcon data-icon="inline-start" />
