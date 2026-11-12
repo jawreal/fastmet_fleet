@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { INavigationLinks } from "@/lib/navLinks";
 
-export function NavMain({ label, items }: INavigationLinks) {
+export function NavMain({ label, items }: Readonly<INavigationLinks>) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
 
@@ -26,8 +26,7 @@ export function NavMain({ label, items }: INavigationLinks) {
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map(({ url, title, icon: Icon }) => {
-            const isActive =
-              pathname === url || pathname.startsWith(`${url}/`);
+            const isActive = pathname === url || pathname.startsWith(`${url}/`);
             return (
               <SidebarMenuItem key={url}>
                 <SidebarMenuButton
