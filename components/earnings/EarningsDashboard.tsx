@@ -16,6 +16,10 @@ import { Badge } from "@/components/ui/badge";
 import { WalletTransactions } from "./WalletTransactions";
 import { EarningsEstimator } from "./EarningsEstimator";
 import {
+  EarningsSummaryCard,
+  type EarningsSummaryCardProps,
+} from "./EarningsSummaryCard";
+import {
   Card,
   CardHeader,
   CardTitle,
@@ -37,10 +41,57 @@ const pesos = (value: number) =>
     currency: "PHP",
     maximumFractionDigits: 0,
   }).format(value);
-  
+
 const daily = [
   16000, 19000, 0, 25000, 14000, 12000, 24000, 16000, 27000, 0, 8000, 0, 0, 0,
 ].map((amount, i) => ({ date: i === 0 ? "30 Sep" : `${i} Oct`, amount }));
+
+const summaryCards: EarningsSummaryCardProps[] = [
+  {
+    title: "Wallet balance",
+    value: pesos(51000),
+    description: "Available to use or cash out",
+    icon: Wallet,
+    footer: (
+      <Link
+        href="/business/settings"
+        className="inline-flex items-center gap-1.5 text-xs font-medium underline-offset-4 hover:underline"
+      >
+        Manage payout method
+        <ArrowUpRight className="size-3.5" />
+      </Link>
+    ),
+  },
+  {
+    title: "Awaiting confirmation",
+    value: pesos(2000),
+    description: "1 wallet top-up under review",
+    icon: Clock3,
+    footer: <Badge variant="outline">Pending verification</Badge>,
+  },
+  {
+    title: "Earned in 30 days",
+    value: pesos(197580),
+    description: "Full fares from completed trips",
+    icon: ArrowUpRight,
+    footer: (
+      <span className="text-muted-foreground">
+        You keep 100% of every fare.
+      </span>
+    ),
+  },
+  {
+    title: "Cash collected this week",
+    value: pesos(6390),
+    description: "Collected by drivers on 1 cash trip",
+    icon: Banknote,
+    footer: (
+      <span className="text-muted-foreground">
+        To be remitted to your office
+      </span>
+    ),
+  },
+];
 
 export function EarningsDashboard() {
   const [period, setPeriod] = useState("14");
@@ -63,99 +114,14 @@ export function EarningsDashboard() {
         className="grid items-stretch gap-4 @3xl:grid-cols-2"
       >
         <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-muted-foreground">
-                  Wallet balance
-                </CardTitle>
-                <Wallet className="size-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <p className="text-3xl font-semibold tracking-tight tabular-nums">
-                {pesos(51000)}
-              </p>
-              <p className="text-muted-foreground">
-                Available to use or cash out
-              </p>
-            </CardContent>
-            <CardFooter className="mt-auto">
-              <Link
-                href="/business/settings"
-                className="inline-flex items-center gap-1.5 text-xs font-medium underline-offset-4 hover:underline"
-              >
-                Manage payout method
-                <ArrowUpRight className="size-3.5" />
-              </Link>
-            </CardFooter>
-          </Card>
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-muted-foreground">
-                  Awaiting confirmation
-                </CardTitle>
-                <Clock3 className="size-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <p className="text-3xl font-semibold tracking-tight tabular-nums">
-                {pesos(2000)}
-              </p>
-              <p className="text-muted-foreground">
-                1 wallet top-up under review
-              </p>
-            </CardContent>
-            <CardFooter className="mt-auto">
-              <Badge variant="outline">Pending verification</Badge>
-            </CardFooter>
-          </Card>
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-muted-foreground">
-                  Earned in 30 days
-                </CardTitle>
-                <ArrowUpRight className="size-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <p className="text-3xl font-semibold tracking-tight tabular-nums">
-                {pesos(197580)}
-              </p>
-              <p className="text-muted-foreground">
-                Full fares from completed trips
-              </p>
-            </CardContent>
-            <CardFooter className="mt-auto text-muted-foreground">
-              You keep 100% of every fare.
-            </CardFooter>
-          </Card>
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-muted-foreground">
-                  Cash collected this week
-                </CardTitle>
-                <Banknote className="size-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <p className="text-3xl font-semibold tracking-tight tabular-nums">
-                {pesos(6390)}
-              </p>
-              <p className="text-muted-foreground">
-                Collected by drivers on 1 cash trip
-              </p>
-            </CardContent>
-            <CardFooter className="mt-auto text-muted-foreground">
-              To be remitted to your office
-            </CardFooter>
-          </Card>
+          {summaryCards.map((card) => (
+            <EarningsSummaryCard key={card.title} {...card} />
+          ))}
         </div>
         <EarningsEstimator />
       </section>
+
+      {/* ------ Bar graph ------*/}
       <Card>
         <CardHeader className="flex flex-wrap flex-row items-start justify-between gap-3">
           <div className="space-y-1">
