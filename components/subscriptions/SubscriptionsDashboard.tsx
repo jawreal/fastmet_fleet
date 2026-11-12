@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { SubscriptionPlans } from "./SubscriptionPlans";
 import { SubscriptionSummary } from "./SubscriptionSummary";
 import { VehicleSlotsTable } from "./VehicleSlotsTable";
+import { PaymentHistoryTable } from "./PaymentHistoryTable";
 
 export function SubscriptionsDashboard() {
   return (
@@ -31,6 +32,7 @@ export function SubscriptionsDashboard() {
       <SubscriptionPlans />
       <SubscriptionSummary />
       <VehicleSlotsTable />
+      <PaymentHistoryTable />
     </div>
   );
 }
