@@ -12,7 +12,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
 import { Badge } from "@/components/ui/badge";
 import { WalletTransactions } from "./WalletTransactions";
 import { EarningsEstimator } from "./EarningsEstimator";
@@ -58,7 +57,6 @@ export function EarningsDashboard() {
             Your wallet, trip earnings and payouts in one place.
           </p>
         </div>
-        <NewBookingDialog />
       </header>
       <section
         aria-label="Balance overview and earnings estimator"

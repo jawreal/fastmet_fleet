@@ -1,4 +1,3 @@
-import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
 import { Badge } from "@/components/ui/badge";
 import { SubscriptionPlans } from "./SubscriptionPlans";
 import { SubscriptionSummary } from "./SubscriptionSummary";
@@ -25,7 +24,6 @@ export function SubscriptionsDashboard() {
             />{" "}
             Synced
           </Badge>
-          <NewBookingDialog />
         </div>
       </header>
 
