@@ -16,8 +16,8 @@ import {
   vehicleFileDefinitions,
   type VehicleFile,
   type VehicleFiles,
-} from "@/lib/VehicleFileData";
-import type { VehicleSlot } from "../../lib/SubscriptionData";
+} from "@/lib/vehicleFileData";
+import type { VehicleSlot } from "../../lib/pubscriptionData";
 
 interface SlotRequirementsDialogProps {
   slot: VehicleSlot;

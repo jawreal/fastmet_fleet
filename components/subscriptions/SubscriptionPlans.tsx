@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatPesos } from "@/lib/reportData";
-import { subscriptionPlans } from "../../lib/SubscriptionData";
+import { subscriptionPlans } from "../../lib/pubscriptionData";
 
 export function SubscriptionPlans() {
   return (

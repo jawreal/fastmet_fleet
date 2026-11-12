@@ -2,7 +2,7 @@
 
 import { PaginatedTable, type DataTableColumn } from "@/components/PaginatedTable";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { subscriptionPayments, type SubscriptionPayment } from "@/lib/PaymentHistoryData";
+import { subscriptionPayments, type SubscriptionPayment } from "@/lib/paymentHistoryData";
 import { formatPesos } from "@/lib/reportData";
 
 const paymentDateFormatter = new Intl.DateTimeFormat("en-PH", {

@@ -21,7 +21,7 @@ import {
   readVehicleFile,
   type VehicleFile,
   type VehicleFileDefinition,
-} from "../../lib/VehicleFileData";
+} from "../../lib/vehicleFileData";
 
 interface VehicleFileUploadProps {
   definition: VehicleFileDefinition;

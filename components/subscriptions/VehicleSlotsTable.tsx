@@ -9,8 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { FleetVehicleFiles } from "@/lib/VehicleFileData";
-import { vehicleSlots } from "../../lib/SubscriptionData";
+import type { FleetVehicleFiles } from "@/lib/vehicleFileData";
+import { vehicleSlots } from "../../lib/pubscriptionData";
 import {
   createVehicleSlotColumns,
   type SlotAction,

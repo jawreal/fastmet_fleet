@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import { formatPesos } from "@/lib/reportData";
-import type { VehicleSlot } from "../../lib/SubscriptionData";
+import type { VehicleSlot } from "../../lib/pubscriptionData";
 
 interface ReleaseSlotDialogProps {
   slot: VehicleSlot;

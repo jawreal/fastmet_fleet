@@ -3,7 +3,7 @@ import {
   formatRenewalDate,
   subscriptionPlans,
   vehicleSlots,
-} from "../../lib/SubscriptionData";
+} from "../../lib/pubscriptionData";
 
 export function SubscriptionSummary() {
   const activeSlots = vehicleSlots.filter((slot) => slot.status === "Active");

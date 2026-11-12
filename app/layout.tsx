@@ -22,7 +22,7 @@ export default function RootLayout({ children }: Readonly<IRoot>) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider>
           <TooltipProvider>{children}</TooltipProvider>
         </ThemeProvider>
       </body>

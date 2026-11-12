@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import {
   formatRenewalDate,
   type VehicleSlot,
-} from "../../lib/SubscriptionData";
+} from "../../lib/pubscriptionData";
 
 export type SlotAction =
   | { type: "renew"; slots: VehicleSlot[] }

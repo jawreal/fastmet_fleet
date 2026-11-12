@@ -23,7 +23,7 @@ import { formatPesos } from "@/lib/reportData";
 import {
   subscriptionPlans,
   type VehicleSlot,
-} from "../../lib/SubscriptionData";
+} from "../../lib/pubscriptionData";
 
 interface RenewSubscriptionDialogProps {
   slots: VehicleSlot[];
