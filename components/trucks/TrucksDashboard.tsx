@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { AddCrewDialog } from "@/components/crew/AddCrewDialog";
 import { AddVehicleSheet } from "./add/AddVehicleSheet";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ import { PaginatedTable } from "@/components/PaginatedTable";
 import { TableSearch } from "@/components/TableSearch";
 import { cn } from "@/lib/utils";
 import { filterTableRows } from "@/lib/tableSearch";
-import { sampleCrew, type CrewRole } from "@/lib/crewData";
+import { sampleCrew, type CrewMember, type CrewRole } from "@/lib/crewData";
 import { sampleTrucks, truckFilters, type TruckFilter } from "@/lib/truckData";
 import { createTruckColumns, createAssignmentColumns } from "./TruckColumns";
 import { TruckDetailsSheet } from "./TruckDetailsSheet";
@@ -32,6 +33,8 @@ const views = ["Vehicles", "Driver assignments"] as const;
 type TruckView = (typeof views)[number];
 
 export function TrucksDashboard() {
+  /*TAKE_NOTE: MOCK UP */
+  const [crew, setCrew] = useState(sampleCrew);
   const [addingVehicle, setAddingVehicle] = useState(false);
   const [view, setView] = useState<TruckView>("Vehicles");
   const [filter, setFilter] = useState<TruckFilter>("All statuses");
@@ -54,14 +57,28 @@ export function TrucksDashboard() {
     },
     [],
   );
+  /*TAKE_NOTE: MOCK UP */
+  function addCrewMember(person: CrewMember) {
+    setCrew((current) => [
+      ...current.map((member) =>
+        person.vehicle &&
+        member.role === person.role &&
+        member.vehicle === person.vehicle
+          ? { ...member, vehicle: "" }
+          : member,
+      ),
+      person,
+    ]);
+    if (person.vehicle) assignCrew(person.vehicle, person.role, person.id);
+  }
   const options = useMemo(
     () => ({
-      crew: sampleCrew,
+      crew,
       onView: (truck: (typeof sampleTrucks)[number]) =>
         setSelectedPlate(truck.plate),
       onAssign: assignCrew,
     }),
-    [assignCrew],
+    [assignCrew, crew],
   );
   const vehicleColumns = useMemo(() => createTruckColumns(options), [options]);
   const assignmentColumns = useMemo(
@@ -78,12 +95,12 @@ export function TrucksDashboard() {
     truck.model,
     truck.type,
     truck.status,
-    sampleCrew.find((person) => person.id === truck.driverId)?.name,
-    sampleCrew.find((person) => person.id === truck.helperId)?.name,
+    crew.find((person) => person.id === truck.driverId)?.name,
+    crew.find((person) => person.id === truck.helperId)?.name,
   ]);
   const selectedTruck = trucks.find((truck) => truck.plate === selectedPlate);
   const unassignedCount = trucks.filter((truck) => !truck.driverId).length;
-  const relievers = sampleCrew
+  const relievers = crew
     .filter(
       (person) =>
         person.role === "Driver" &&
@@ -178,16 +195,16 @@ export function TrucksDashboard() {
               />
             </div>
             {/*TAKE_NOTE: MOCK UP */}
-            <Button
-              type="button"
-              className="col-start-2 row-start-1"
-              onClick={() => {
-                if (view === "Vehicles") setAddingVehicle(true);
-              }}
-            >
-              <Plus />
-              {view === "Vehicles" ? "Add vehicle" : "Add driver"}
-            </Button>
+            <div className="col-start-2 row-start-1">
+              {view === "Vehicles" ? (
+                <Button type="button" onClick={() => setAddingVehicle(true)}>
+                  <Plus />
+                  Add vehicle
+                </Button>
+              ) : (
+                <AddCrewDialog role="Driver" onAdd={addCrewMember} />
+              )}
+            </div>
           </div>
         </CardHeader>
         <PaginatedTable
@@ -216,7 +233,7 @@ export function TrucksDashboard() {
       {selectedTruck && (
         <TruckDetailsSheet
           truck={selectedTruck}
-          crew={sampleCrew}
+          crew={crew}
           onAssign={assignCrew}
           onClose={() => setSelectedPlate(null)}
         />
