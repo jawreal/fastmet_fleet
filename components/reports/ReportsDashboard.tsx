@@ -28,6 +28,7 @@ const reportPeriods: ReportPeriod[] = [
   "Last month",
 ];
 
+/*TAKE_NOTE: MOCK UP */
 const sampleMetrics: ReportMetric[] = [
   { title: "Completed trips", value: "10", description: "231 km loaded" },
   {
@@ -81,6 +82,7 @@ function ReportsSummary() {
 }
 
 export function ReportsDashboard() {
+  /*TAKE_NOTE: MOCK UP */
   // Period selection is UI-only until reports are connected to live data.
   const [selectedPeriod, setSelectedPeriod] =
     useState<ReportPeriod>("Last month");

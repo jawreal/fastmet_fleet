@@ -41,6 +41,7 @@ const roleOptions = ["Driver", "Helper"].map((value) => ({
   value,
 }));
 
+/*TAKE_NOTE: MOCK UP */
 const vehicleOptions = [
   { label: "None (reliever)", value: "" },
   ...crewVehicles.map((value) => ({ label: value, value })),
@@ -105,6 +106,7 @@ export function AddCrewDialog({ role, onAdd }: Readonly<ICrewDialogProps>) {
   const id = useId();
   const fieldId = (name: string) => `${id}-${name}`;
 
+  /*TAKE_NOTE: MOCK UP */
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);

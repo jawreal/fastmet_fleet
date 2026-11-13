@@ -1,5 +1,8 @@
 "use client";
 
+import { TableSearch } from "@/components/TableSearch";
+import { filterTableRows } from "@/lib/tableSearch";
+
 import { useId, useState } from "react";
 import { CircleAlertIcon, StarIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -113,14 +116,29 @@ const columns: DataTableColumn<CrewMember>[] = [
 const helperColumns = columns.filter((column) => column.id !== "license");
 
 export function DriversHelpers() {
+  const [query, setQuery] = useState("");
   const [role, setRole] = useState<CrewRole>("Driver");
+  /*TAKE_NOTE: MOCK UP */
   const [crew, setCrew] = useState(sampleCrew);
   const [notice, setNotice] = useState("");
   const id = useId();
+
+  /*TAKE_NOTE: MOCK UP */
   const visibleCrew = crew
     .filter((person) => person.role === role)
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  /*TAKE_NOTE: MOCK UP */
+  const filteredCrew = filterTableRows(visibleCrew, query, (person) => [
+    person.name,
+    person.phone,
+    person.vehicle,
+    person.status,
+    person.license,
+    person.codes,
+  ]);
+
+  /*TAKE_NOTE: MOCK UP */
   function addPerson(person: CrewMember) {
     // Keep a single assigned person per role and vehicle, matching the fleet model.
     setCrew((current) => [
@@ -152,8 +170,8 @@ export function DriversHelpers() {
           Manage your crew, vehicle assignments, and pay schemes.
         </p>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <fieldset className="m-0 min-w-0 max-w-full border-0 p-0">
+      <div className="flex flex-col md:flex-row md:items-center gap-3">
+        <fieldset className="m-0 max-w-full border-0 p-0">
           <legend className="sr-only">Show crew by role</legend>
           <div className="flex max-w-full overflow-x-auto border-b border-border">
             {(["Driver", "Helper"] as const).map((item) => (
@@ -181,7 +199,15 @@ export function DriversHelpers() {
             ))}
           </div>
         </fieldset>
-        <AddCrewDialog role={role} onAdd={addPerson} />
+        <div className="flex w-full items-center justify-end gap-x-2">
+          <TableSearch
+            label="Search crew"
+            placeholder="Search name, vehicle or status…"
+            value={query}
+            onValueChange={setQuery}
+          />
+          <AddCrewDialog role={role} onAdd={addPerson} />
+        </div>
       </div>
       {notice && (
         <p className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs">
@@ -193,8 +219,8 @@ export function DriversHelpers() {
           {role}s
         </h2>
         <PaginatedTable
-          key={role}
-          data={visibleCrew}
+          key={`${role}-${query}`}
+          data={filteredCrew}
           columns={role === "Driver" ? columns : helperColumns}
           getRowId={(person) => person.id}
           labelledBy={`${id}-table-heading`}

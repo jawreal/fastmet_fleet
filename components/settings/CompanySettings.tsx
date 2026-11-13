@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+/*TAKE_NOTE: MOCK UP */
 export function CompanySettings() {
   return (
     <Card aria-labelledby="company-heading" className="@container min-w-0">

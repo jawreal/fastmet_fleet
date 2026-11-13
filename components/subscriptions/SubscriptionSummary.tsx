@@ -5,6 +5,7 @@ import {
   vehicleSlots,
 } from "../../lib/pubscriptionData";
 
+/*TAKE_NOTE: MOCK UP */
 export function SubscriptionSummary() {
   const activeSlots = vehicleSlots.filter((slot) => slot.status === "Active");
   const expiredCount = vehicleSlots.filter(

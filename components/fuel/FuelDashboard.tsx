@@ -26,6 +26,8 @@ import {
 } from "@/lib/fuelData";
 import { cn } from "@/lib/utils";
 import { LogFillUpDialog } from "./LogFillUpDialog";
+import { TableSearch } from "@/components/TableSearch";
+import { filterTableRows } from "@/lib/tableSearch";
 
 interface TruckEconomy {
   plate: string;
@@ -172,9 +174,13 @@ function createLogColumns(
 }
 
 export function FuelDashboard() {
+  /*TAKE_NOTE: MOCK UP */
   const [entries, setEntries] = useState(initialFillUps);
   const [logging, setLogging] = useState(false);
   const [deletingEntry, setDeletingEntry] = useState<FillUp | null>(null);
+  const [economyQuery, setEconomyQuery] = useState("");
+  const [logQuery, setLogQuery] = useState("");
+  /*TAKE_NOTE: MOCK UP */
   // Fixed sample reporting date; replace with the reporting period from live data.
   const recent = entries.filter(
     (entry) => entry.date >= "2026-10-14" && entry.date <= "2026-11-12",
@@ -195,6 +201,23 @@ export function FuelDashboard() {
     };
   });
   const distance = economies.reduce((sum, truck) => sum + truck.distance, 0);
+  const filteredEconomies = filterTableRows(
+    economies,
+    economyQuery,
+    (truck) => [truck.plate, truck.type],
+  );
+  const filteredEntries = filterTableRows(entries, logQuery, (entry) => [
+    entry.plate,
+    entry.driver,
+    entry.station,
+    entry.date,
+    new Intl.DateTimeFormat("en-PH", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      timeZone: "Asia/Manila",
+    }).format(new Date(`${entry.date}T12:00:00+08:00`)),
+  ]).sort((a, b) => b.date.localeCompare(a.date) || b.odometer - a.odometer);
   const measuredLiters = economies.reduce(
     (sum, truck) => sum + truck.measuredLiters,
     0,
@@ -253,14 +276,25 @@ export function FuelDashboard() {
         ))}
       </div>
       <Card className="gap-0">
-        <CardHeader className="pb-4">
-          <CardTitle id="fuel-economy-heading">Fuel economy by truck</CardTitle>
-          <CardDescription>
-            Consumption and costs over the last 30 days.
-          </CardDescription>
+        <CardHeader className="flex flex-wrap flex-row items-center justify-between gap-3 pb-4">
+          <div className="space-y-1">
+            <CardTitle id="fuel-economy-heading">
+              Fuel economy by truck
+            </CardTitle>
+            <CardDescription>
+              Consumption and costs over the last 30 days.
+            </CardDescription>
+          </div>
+          <TableSearch
+            label="Search fuel economy"
+            placeholder="Search truck or type…"
+            value={economyQuery}
+            onValueChange={setEconomyQuery}
+          />
         </CardHeader>
         <PaginatedTable
-          data={economies}
+          key={economyQuery}
+          data={filteredEconomies}
           columns={economyColumns}
           getRowId={(row) => row.plate}
           labelledBy="fuel-economy-heading"
@@ -272,23 +306,29 @@ export function FuelDashboard() {
         </CardFooter>
       </Card>
       <Card className="gap-0">
-        <CardHeader className="flex flex-wrap flex-row items-center justify-between gap-3 pb-4">
-          <div className="space-y-1">
+        <CardHeader className="flex flex-col md:flex-row items-center gap-3 pb-4">
+          <div className="space-y-1 w-full">
             <CardTitle id="fill-up-log-heading">Fill-up log</CardTitle>
             <CardDescription>
               Sample records. Changes last for this preview session.
             </CardDescription>
           </div>
-          <Button onClick={() => setLogging(true)}>
-            <Plus />
-            Log fill-up
-          </Button>
+          <div className="flex w-full items-center justify-end gap-x-2">
+            <TableSearch
+              label="Search fill-up log"
+              placeholder="Search truck, driver or station…"
+              value={logQuery}
+              onValueChange={setLogQuery}
+            />
+            <Button onClick={() => setLogging(true)}>
+              <Plus />
+              Log fill-up
+            </Button>
+          </div>
         </CardHeader>
         <PaginatedTable
-          key={entries.length}
-          data={[...entries].sort(
-            (a, b) => b.date.localeCompare(a.date) || b.odometer - a.odometer,
-          )}
+          key={`${entries.length}-${logQuery}`}
+          data={filteredEntries}
           columns={logColumns}
           getRowId={(row) => row.id}
           labelledBy="fill-up-log-heading"

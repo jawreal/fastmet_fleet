@@ -20,8 +20,10 @@ interface ReleaseSlotDialogProps {
 }
 
 // Demo trip count only; real release eligibility must come from booking data.
+/*TAKE_NOTE: MOCK UP */
 const mockScheduledTrips: Record<string, number> = { "NDA 7183": 1 };
 
+/*TAKE_NOTE: MOCK UP */
 export function ReleaseSlotDialog({
   slot,
   onClose,

@@ -1,8 +1,18 @@
 "use client";
 
-import { PaginatedTable, type DataTableColumn } from "@/components/PaginatedTable";
+import { TableSearch } from "@/components/TableSearch";
+import { filterTableRows } from "@/lib/tableSearch";
+import { useState } from "react";
+
+import {
+  PaginatedTable,
+  type DataTableColumn,
+} from "@/components/PaginatedTable";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { subscriptionPayments, type SubscriptionPayment } from "@/lib/paymentHistoryData";
+import {
+  subscriptionPayments,
+  type SubscriptionPayment,
+} from "@/lib/paymentHistoryData";
 import { formatPesos } from "@/lib/reportData";
 
 const paymentDateFormatter = new Intl.DateTimeFormat("en-PH", {
@@ -29,7 +39,9 @@ function PaymentItem({ payment }: Readonly<{ payment: SubscriptionPayment }>) {
       {payment.coverageEnd && (
         <p className="text-xs text-muted-foreground">
           Covers to{" "}
-          {coverageDateFormatter.format(new Date(`${payment.coverageEnd}T00:00:00+08:00`))}
+          {coverageDateFormatter.format(
+            new Date(`${payment.coverageEnd}T00:00:00+08:00`),
+          )}
         </p>
       )}
     </div>
@@ -48,8 +60,16 @@ const columns: DataTableColumn<SubscriptionPayment>[] = [
     ),
   },
   { id: "vehicle", header: "Vehicle", cell: (payment) => payment.vehiclePlate },
-  { id: "item", header: "Item", cell: (payment) => <PaymentItem payment={payment} /> },
-  { id: "paidWith", header: "Paid with", cell: (payment) => payment.paymentMethod },
+  {
+    id: "item",
+    header: "Item",
+    cell: (payment) => <PaymentItem payment={payment} />,
+  },
+  {
+    id: "paidWith",
+    header: "Paid with",
+    cell: (payment) => payment.paymentMethod,
+  },
   {
     id: "amount",
     header: "Amount",
@@ -59,13 +79,34 @@ const columns: DataTableColumn<SubscriptionPayment>[] = [
 ];
 
 export function PaymentHistoryTable() {
+  const [query, setQuery] = useState("");
+  /*TAKE_NOTE: MOCK UP */
+  const rows = filterTableRows(subscriptionPayments, query, (row) => [
+    row.vehiclePlate,
+    row.item,
+    row.paymentMethod,
+    row.paidAt,
+    paymentDateFormatter.format(new Date(row.paidAt)),
+  ]);
   return (
-    <Card className="min-w-0 gap-0 pb-0" aria-labelledby="paymentHistoryHeading">
-      <CardHeader className="border-b">
-        <CardTitle id="paymentHistoryHeading">Payment history</CardTitle>
+    <Card
+      className="min-w-0 gap-0 pb-0"
+      aria-labelledby="paymentHistoryHeading"
+    >
+      <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-3 border-b">
+        <div className="space-y-1">
+          <CardTitle id="paymentHistoryHeading">Payment history</CardTitle>
+        </div>
+        <TableSearch
+          label="Search payments"
+          placeholder="Search vehicle, item or payment…"
+          value={query}
+          onValueChange={setQuery}
+        />
       </CardHeader>
       <PaginatedTable
-        data={subscriptionPayments}
+        key={query}
+        data={rows}
         columns={columns}
         getRowId={(payment) => payment.id}
         labelledBy="paymentHistoryHeading"

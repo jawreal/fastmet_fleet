@@ -42,10 +42,12 @@ const pesos = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
+/*TAKE_NOTE: MOCK UP */
 const daily = [
   16000, 19000, 0, 25000, 14000, 12000, 24000, 16000, 27000, 0, 8000, 0, 0, 0,
 ].map((amount, i) => ({ date: i === 0 ? "30 Sep" : `${i} Oct`, amount }));
 
+/*TAKE_NOTE: MOCK UP */
 const summaryCards: EarningsSummaryCardProps[] = [
   {
     title: "Wallet balance",

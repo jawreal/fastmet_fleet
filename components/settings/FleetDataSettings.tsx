@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+/*TAKE_NOTE: MOCK UP */
 export function FleetDataSettings() {
   return (
     <Card aria-labelledby="fleetDataHeading" className="ring-destructive/30">

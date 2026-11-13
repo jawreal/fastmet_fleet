@@ -26,6 +26,7 @@ const pesos = (value: number) =>
     currency: "PHP",
     maximumFractionDigits: 0,
   }).format(value);
+/*TAKE_NOTE: MOCK UP */
 const vehicles = [
   {
     value: "6w",
