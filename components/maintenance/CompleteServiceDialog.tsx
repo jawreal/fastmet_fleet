@@ -35,6 +35,7 @@ export function CompleteServiceDialog({
   onClose,
 }: Readonly<CompleteServiceDialogProps>) {
   const [error, setError] = useState("");
+  /*TAKE_NOTE: MOCK UP */
   function save(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);

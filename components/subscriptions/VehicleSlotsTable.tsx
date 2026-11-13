@@ -1,5 +1,8 @@
 "use client";
 
+import { TableSearch } from "@/components/TableSearch";
+import { filterTableRows } from "@/lib/tableSearch";
+
 import { useMemo, useState } from "react";
 import { PaginatedTable } from "@/components/PaginatedTable";
 import { Button } from "@/components/ui/button";
@@ -20,8 +23,17 @@ import { ReleaseSlotDialog } from "./ReleaseSlotDialog";
 import { SlotRequirementsDialog } from "./SlotRequirementsDialog";
 
 export function VehicleSlotsTable() {
+  const [query, setQuery] = useState("");
+  /*TAKE_NOTE: MOCK UP */
+  const rows = filterTableRows(vehicleSlots, query, (slot) => [
+    slot.plate,
+    slot.vehicleType,
+    slot.plan,
+    slot.status,
+  ]);
   const [selectedAction, setSelectedAction] = useState<SlotAction>(null);
   // Keep files per vehicle above the dialog so closing/reopening does not lose them.
+  /*TAKE_NOTE: MOCK UP */
   const [vehicleFiles, setVehicleFiles] = useState<FleetVehicleFiles>({});
   const dueSlots = vehicleSlots.filter((slot) => slot.status === "Expired");
 
@@ -33,24 +45,35 @@ export function VehicleSlotsTable() {
 
   return (
     <Card className="min-w-0 gap-0 pb-0" aria-labelledby="vehicleSlotsHeading">
-      <CardHeader className="flex flex-wrap items-center justify-between gap-3 border-b">
-        <div className="space-y-1">
+      <CardHeader className="flex flex-col md:flex-row items-center gap-3 border-b">
+        <div className="space-y-1 w-full">
           <CardTitle id="vehicleSlotsHeading">Vehicle slots</CardTitle>
           <CardDescription>
             {vehicleSlots.filter((slot) => slot.status === "Active").length} of{" "}
             {vehicleSlots.length} active
           </CardDescription>
         </div>
-        <Button
-          type="button"
-          disabled={dueSlots.length === 0}
-          onClick={() => setSelectedAction({ type: "renew", slots: dueSlots })}
-        >
-          Renew {dueSlots.length} due
-        </Button>
+        <div className="flex w-full items-center justify-end gap-x-2">
+          <TableSearch
+            label="Search vehicle slots"
+            placeholder="Search vehicle, plan or status…"
+            value={query}
+            onValueChange={setQuery}
+          />
+          <Button
+            type="button"
+            disabled={dueSlots.length === 0}
+            onClick={() =>
+              setSelectedAction({ type: "renew", slots: dueSlots })
+            }
+          >
+            Renew {dueSlots.length} due
+          </Button>
+        </div>
       </CardHeader>
       <PaginatedTable
-        data={vehicleSlots}
+        key={query}
+        data={rows}
         columns={columns}
         getRowId={(slot) => slot.plate}
         labelledBy="vehicleSlotsHeading"

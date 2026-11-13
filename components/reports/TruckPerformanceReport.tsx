@@ -1,5 +1,9 @@
 "use client";
 
+import { TableSearch } from "@/components/TableSearch";
+import { filterTableRows } from "@/lib/tableSearch";
+import { useState } from "react";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -108,16 +112,31 @@ const columns: DataTableColumn<TruckReportData>[] = [
 ];
 
 export function TruckPerformanceReport() {
+  const [query, setQuery] = useState("");
+  /*TAKE_NOTE: MOCK UP */
+  const rows = filterTableRows(truckReports, query, (row) => [
+    row.plate,
+    row.type,
+  ]);
   return (
     <Card className="min-w-0 gap-0 pb-0" aria-labelledby="truckReportHeading">
-      <CardHeader className="flex flex-wrap items-center justify-between gap-2 border-b">
-        <CardTitle id="truckReportHeading">By truck</CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Oct 1, 2026 – Oct 31, 2026
-        </p>
+      <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-3 border-b">
+        <div className="space-y-1">
+          <CardTitle id="truckReportHeading">By truck</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Oct 1, 2026 – Oct 31, 2026
+          </p>
+        </div>
+        <TableSearch
+          label="Search truck report"
+          placeholder="Search truck or type…"
+          value={query}
+          onValueChange={setQuery}
+        />
       </CardHeader>
       <PaginatedTable
-        data={truckReports}
+        key={query}
+        data={rows}
         columns={columns}
         getRowId={(truck) => truck.plate}
         labelledBy="truckReportHeading"

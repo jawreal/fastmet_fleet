@@ -27,6 +27,7 @@ const payoutMethods = [
   { label: "Bank transfer", value: "bankTransfer" },
 ];
 
+/*TAKE_NOTE: MOCK UP */
 export function PayoutsSettings() {
   return (
     <Card aria-labelledby="payouts-heading" className="@container min-w-0">

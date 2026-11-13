@@ -66,6 +66,7 @@ export function RenewSubscriptionDialog({
   const [months, setMonths] = useState(1);
   const [notice, setNotice] = useState("");
   const periodId = useId();
+  /*TAKE_NOTE: MOCK UP */
   const walletBalance = 51000;
   const subscriptionTotal = slots.reduce(
     (total, slot) => total + slot.monthlyPrice * months,

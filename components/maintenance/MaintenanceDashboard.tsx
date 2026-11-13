@@ -1,5 +1,8 @@
 "use client";
 
+import { TableSearch } from "@/components/TableSearch";
+import { filterTableRows } from "@/lib/tableSearch";
+
 import { useMemo, useState } from "react";
 import { AlertTriangle, Clock3, Wrench, Banknote, Plus } from "lucide-react";
 import { EarningsSummaryCard } from "@/components/earnings/EarningsSummaryCard";
@@ -28,6 +31,9 @@ import { ScheduleServiceDialog } from "./ScheduleServiceDialog";
 import { CompleteServiceDialog } from "./CompleteServiceDialog";
 
 export function MaintenanceDashboard() {
+  const [serviceQuery, setServiceQuery] = useState("");
+  const [historyQuery, setHistoryQuery] = useState("");
+  /*TAKE_NOTE: MOCK UP */
   const [trucks, setTrucks] = useState(maintenanceTrucks);
   const [services, setServices] = useState(initialScheduledServices);
   const [history, setHistory] = useState(initialServiceHistory);
@@ -49,6 +55,7 @@ export function MaintenanceDashboard() {
       trucks.find((truck) => truck.plate === service.plate)!,
     ),
   );
+  /*TAKE_NOTE: MOCK UP */
   const recent = history.filter(
     (entry) => entry.date >= "2026-10-14" && entry.date <= "2026-11-12",
   );
@@ -80,6 +87,21 @@ export function MaintenanceDashboard() {
       icon: Banknote,
     },
   ];
+  const filteredServices = filterTableRows(services, serviceQuery, (row) => [
+    row.plate,
+    row.kind,
+    row.shop,
+    row.notes,
+    row.dueDate,
+  ]);
+  const filteredHistory = filterTableRows(history, historyQuery, (row) => [
+    row.plate,
+    row.kind,
+    row.shop,
+    row.notes,
+    row.date,
+  ]).sort((a, b) => b.date.localeCompare(a.date));
+  /*TAKE_NOTE: MOCK UP */
   function saveService(service: ScheduledService) {
     setServices((current) =>
       current.some((item) => item.id === service.id)
@@ -87,6 +109,7 @@ export function MaintenanceDashboard() {
         : [...current, service],
     );
   }
+  /*TAKE_NOTE: MOCK UP */
   function completeService(entry: CompletedService) {
     setHistory((current) => [entry, ...current]);
     setServices((current) =>
@@ -132,8 +155,8 @@ export function MaintenanceDashboard() {
       </div>
       {/* ------ Upcoming service table --------- */}
       <Card className="gap-0">
-        <CardHeader className="flex flex-wrap flex-row items-center justify-between gap-3 pb-4">
-          <div className="space-y-1">
+        <CardHeader className="flex flex-col md:flex-row items-center gap-3 pb-4">
+          <div className="space-y-1 w-full">
             <CardTitle id="upcoming-service-heading">
               Upcoming service
             </CardTitle>
@@ -141,14 +164,22 @@ export function MaintenanceDashboard() {
               Sample records. Changes last for this preview session.
             </CardDescription>
           </div>
-          <Button onClick={() => setScheduling(true)}>
-            <Plus />
-            Schedule service
-          </Button>
+          <div className="flex w-full items-center justify-end gap-x-2">
+            <TableSearch
+              label="Search upcoming services"
+              placeholder="Search truck, service or shop…"
+              value={serviceQuery}
+              onValueChange={setServiceQuery}
+            />
+            <Button onClick={() => setScheduling(true)}>
+              <Plus />
+              Schedule service
+            </Button>
+          </div>
         </CardHeader>
         <PaginatedTable
-          key={services.length}
-          data={services}
+          key={`${services.length}-${serviceQuery}`}
+          data={filteredServices}
           columns={columns}
           getRowId={(row) => row.id}
           labelledBy="upcoming-service-heading"
@@ -204,8 +235,14 @@ export function MaintenanceDashboard() {
                     {Math.round(usage)}%
                   </meter>
                   {/* Custom visual keeps the theme consistent across browsers; the native meter provides accessibility. */}
-                  <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div className={cn("h-full rounded-full", meterColor)} style={{ width: `${usage}%` }} />
+                  <div
+                    aria-hidden="true"
+                    className="h-1.5 overflow-hidden rounded-full bg-muted"
+                  >
+                    <div
+                      className={cn("h-full rounded-full", meterColor)}
+                      style={{ width: `${usage}%` }}
+                    />
                   </div>
                 </li>
               );
@@ -215,15 +252,23 @@ export function MaintenanceDashboard() {
       </Card>
       {/* ------ Service history table --------- */}
       <Card className="gap-0">
-        <CardHeader className="pb-4">
-          <CardTitle id="service-history-heading">Service history</CardTitle>
-          <CardDescription>
-            Completed maintenance and actual costs.
-          </CardDescription>
+        <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-3 pb-4">
+          <div className="space-y-1">
+            <CardTitle id="service-history-heading">Service history</CardTitle>
+            <CardDescription>
+              Completed maintenance and actual costs.
+            </CardDescription>
+          </div>
+          <TableSearch
+            label="Search service history"
+            placeholder="Search truck, service or shop…"
+            value={historyQuery}
+            onValueChange={setHistoryQuery}
+          />
         </CardHeader>
         <PaginatedTable
-          key={history.length}
-          data={[...history].sort((a, b) => b.date.localeCompare(a.date))}
+          key={`${history.length}-${historyQuery}`}
+          data={filteredHistory}
           columns={historyColumns}
           getRowId={(row) => row.id}
           labelledBy="service-history-heading"

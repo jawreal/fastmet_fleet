@@ -1,8 +1,17 @@
 "use client";
 
+import { TableSearch } from "@/components/TableSearch";
+import { filterTableRows } from "@/lib/tableSearch";
+
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   PaginatedTable,
@@ -28,6 +37,7 @@ interface Transaction {
   amount: number;
   status: "Settled" | "Pending";
 }
+/*TAKE_NOTE: MOCK UP */
 const transactions: Transaction[] = [
   {
     id: "SUB-0031",
@@ -174,45 +184,63 @@ const columns: DataTableColumn<Transaction>[] = [
 ];
 
 export function WalletTransactions() {
+  const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
   const rows = transactions.filter(
     (row) => filter === "All" || row.category === filter,
   );
 
+  const filteredRows = filterTableRows(rows, query, (row) => [
+    row.date,
+    row.type,
+    row.details,
+    row.booking,
+    row.status,
+  ]);
   return (
     <Card className="gap-0" aria-labelledby="wallet-transactions-heading">
-      <CardHeader className="flex flex-wrap flex-row items-center justify-between gap-3 pb-4">
-        <CardTitle id="wallet-transactions-heading">
+      <CardHeader className="flex flex-col md:flex-row items-center gap-3 pb-4">
+        <CardTitle id="wallet-transactions-heading" className="w-full">
           Wallet transactions
         </CardTitle>
-        <fieldset className="m-0 min-w-0 max-w-full border-0 p-0">
-          <legend className="sr-only">Transaction type</legend>
-          <div className="flex max-w-full gap-1 overflow-x-auto rounded-lg bg-muted/50 p-1">
-            {filters.map((item) => (
-              <Button
-                key={item}
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-pressed={filter === item}
-                aria-controls="wallet-transactions-table"
-                onClick={() => setFilter(item)}
-                className={cn(
-                  "shrink-0 text-muted-foreground active:not-aria-[haspopup]:translate-y-0",
-                  filter === item &&
-                    "bg-primary/10 text-yellow-700 ring-1 ring-primary/20 hover:bg-primary/15 hover:text-yellow-700 dark:text-primary dark:hover:text-primary",
-                )}
-              >
-                {item}
-              </Button>
-            ))}
-          </div>
-        </fieldset>
+        <div className="flex w-full items-center justify-end gap-x-2">
+          <Select
+            value={filter}
+            items={filters.map((value) => ({
+              value,
+              label: value === "All" ? "All transactions" : value,
+            }))}
+            onValueChange={(value) => {
+              if (value && filters.some((item) => item === value))
+                setFilter(value as Filter);
+            }}
+          >
+            <SelectTrigger
+              aria-label="Filter transaction type"
+              className="min-w-32 shrink-0"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {filters.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {item === "All" ? "All transactions" : item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <TableSearch
+            label="Search wallet transactions"
+            placeholder="Search type, details or booking…"
+            value={query}
+            onValueChange={setQuery}
+          />
+        </div>
       </CardHeader>
       <div id="wallet-transactions-table">
         <PaginatedTable
-          key={filter}
-          data={rows}
+          key={`${filter}-${query}`}
+          data={filteredRows}
           columns={columns}
           getRowId={(row) => row.id}
           labelledBy="wallet-transactions-heading"

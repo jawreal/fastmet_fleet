@@ -8,6 +8,7 @@ import {
 import { formatPesos } from "@/lib/reportData";
 import { subscriptionPlans } from "../../lib/pubscriptionData";
 
+/*TAKE_NOTE: MOCK UP */
 export function SubscriptionPlans() {
   return (
     <section

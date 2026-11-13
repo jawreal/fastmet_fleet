@@ -44,6 +44,7 @@ export function ScheduleServiceDialog({
   const [plate, setPlate] = useState(service?.plate ?? trucks[0].plate);
   const [kind, setKind] = useState(service?.kind ?? "PMS");
   const [error, setError] = useState("");
+  /*TAKE_NOTE: MOCK UP */
   function save(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
