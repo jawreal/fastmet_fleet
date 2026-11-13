@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { AddVehicleSheet } from "./add/AddVehicleSheet";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,7 @@ const views = ["Vehicles", "Driver assignments"] as const;
 type TruckView = (typeof views)[number];
 
 export function TrucksDashboard() {
+  const [addingVehicle, setAddingVehicle] = useState(false);
   const [view, setView] = useState<TruckView>("Vehicles");
   const [filter, setFilter] = useState<TruckFilter>("All statuses");
   const [query, setQuery] = useState("");
@@ -144,7 +146,7 @@ export function TrucksDashboard() {
               available
             </CardDescription>
           </div>
-          <div className="flex w-full flex-wrap items-center justify-end gap-2 md:w-auto md:shrink-0 md:flex-nowrap">
+          <div className="grid w-full grid-cols-[1fr_auto] items-center gap-2 md:flex md:w-auto md:shrink-0">
             <Select
               value={filter}
               items={truckFilters.map((value) => ({ value, label: value }))}
@@ -153,7 +155,10 @@ export function TrucksDashboard() {
                   setFilter(value as TruckFilter);
               }}
             >
-              <SelectTrigger className="min-w-32" aria-label="Filter trucks">
+              <SelectTrigger
+                className="min-w-32 w-full md:w-auto"
+                aria-label="Filter trucks"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -164,14 +169,22 @@ export function TrucksDashboard() {
                 ))}
               </SelectContent>
             </Select>
-            <TableSearch
-              label="Search trucks"
-              placeholder="Search plate, model or crew…"
-              value={query}
-              onValueChange={setQuery}
-            />
+            <div className="col-span-2 row-start-2 min-w-0 [&>div]:max-w-none md:order-0 md:w-64">
+              <TableSearch
+                label="Search trucks"
+                placeholder="Search plate, model or crew…"
+                value={query}
+                onValueChange={setQuery}
+              />
+            </div>
             {/*TAKE_NOTE: MOCK UP */}
-            <Button type="button">
+            <Button
+              type="button"
+              className="col-start-2 row-start-1"
+              onClick={() => {
+                if (view === "Vehicles") setAddingVehicle(true);
+              }}
+            >
               <Plus />
               {view === "Vehicles" ? "Add vehicle" : "Add driver"}
             </Button>
@@ -196,6 +209,9 @@ export function TrucksDashboard() {
           </CardFooter>
         )}
       </Card>
+      {addingVehicle && (
+        <AddVehicleSheet onClose={() => setAddingVehicle(false)} />
+      )}
       {/* ------ Full vehicle details sheet --------- */}
       {selectedTruck && (
         <TruckDetailsSheet
