@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev] # runs again after a merge, so main/dev are always verified
+
+# Cancel the older run of the same branch/PR when a new commit comes in
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Read-only token: CI only needs to read the code
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+  HUSKY: 0 # CI runs the checks itself; skip installing git hooks there
+
+jobs:
+  # Job 1: fast static checks (the job name below is what you select as a required check)
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prettier (format check)
+        run: pnpm format:check # fails if any file is not formatted
+
+      - name: Oxlint
+        run: pnpm lint:ox
+
+      - name: ESLint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Add later when you have them:
+      # - name: Unit tests
+      #   run: npm test
+
+  # Job 2: production build, runs in parallel with Checks
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # Next.js build cache (speeds up `next build` on repeat runs)
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('app/**', 'components/**', 'lib/**', 'hooks/**') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Next.js build
+        run: pnpm build

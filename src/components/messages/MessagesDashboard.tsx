@@ -313,7 +313,11 @@ export function MessagesDashboard() {
                 }
                 className="min-h-24 max-h-40 resize-none pb-12"
               />
-              <Button type="submit" className="absolute right-2 bottom-2" disabled={!draft.trim()}>
+              <Button
+                type="submit"
+                className="absolute right-2 bottom-2"
+                disabled={!draft.trim()}
+              >
                 <Send />
                 Send
               </Button>
