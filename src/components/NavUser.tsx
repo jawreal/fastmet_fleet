@@ -38,6 +38,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useCompanyImage } from "@/hooks/use-company-image";
 
 interface ICompany {
   company: { name: string; location: string };
@@ -46,6 +48,12 @@ interface ICompany {
 const subscribe = () => () => {};
 
 export function NavUser({ company }: Readonly<ICompany>) {
+  const { image } = useCompanyImage();
+  const initials = company.name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("");
   const { isMobile } = useSidebar();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -91,6 +99,18 @@ export function NavUser({ company }: Readonly<ICompany>) {
                 />
               }
             >
+              <Avatar className="size-9 shrink-0 rounded-full">
+                {image && (
+                  <AvatarImage
+                    src={image.url}
+                    alt={`${company.name} logo`}
+                    className="object-cover "
+                  />
+                )}
+                <AvatarFallback className="rounded-full text-xs font-medium">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
               <div className="grid min-w-0 flex-1 gap-1 text-left text-sm leading-tight">
                 <span
                   className="truncate text-xs font-semibold"

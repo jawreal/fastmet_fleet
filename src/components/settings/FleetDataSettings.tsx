@@ -22,10 +22,9 @@ export function FleetDataSettings() {
       <CardContent>
         <div className="flex flex-col gap-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <h3 className="text-xs font-medium">Clear all data</h3>
+            <h3 className="text-xs font-medium">Reset fleet data</h3>
             <p className="text-xs/relaxed text-muted-foreground">
-              You&apos;re looking at the sample fleet, Bayani Trucking Services.
-              Clear it before adding your own trucks.
+              Remove existing fleet records and start with a clean workspace.
             </p>
           </div>
           <Button
@@ -35,7 +34,7 @@ export function FleetDataSettings() {
             size="lg"
           >
             <Trash2Icon data-icon="inline-start" />
-            Clear all data and start fresh
+            Clear all data
           </Button>
         </div>
       </CardContent>
