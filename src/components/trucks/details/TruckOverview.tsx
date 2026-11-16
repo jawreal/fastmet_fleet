@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { RouteStop } from "@/components/bookings/BookingCard";
 import {
   Select,
   SelectTrigger,
@@ -73,7 +74,16 @@ export function TruckOverview({
             </Link>
           </div>
           <p className="text-xs text-muted-foreground">{profile.booking.id}</p>
-          <p className="text-xs/relaxed">{profile.booking.route}</p>
+          <div className="space-y-4 pt-1">
+            {profile.booking.route.split("→").map((stop, index) => (
+              <RouteStop
+                key={`${index}-${stop}`}
+                name={stop.trim()}
+                area=""
+                destination={index > 0}
+              />
+            ))}
+          </div>
         </div>
       )}
       <h3 className="text-xs font-semibold">Vehicle specifications</h3>
