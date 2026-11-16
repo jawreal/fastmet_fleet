@@ -1,0 +1,2 @@
+npm run typecheck
+# Once Electron is configured, add: npx tsc -p electron --noEmit

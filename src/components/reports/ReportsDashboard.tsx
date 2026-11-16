@@ -10,10 +10,7 @@ import { TruckPerformanceReport } from "@/components/reports/TruckPerformanceRep
 import { DriverHelperReport } from "@/components/reports/DriverHelperReport";
 
 type ReportPeriod =
-  | "Last 7 days"
-  | "Last 30 days"
-  | "This month"
-  | "Last month";
+  "Last 7 days" | "Last 30 days" | "This month" | "Last month";
 
 interface ReportMetric {
   title: string;
@@ -104,9 +101,7 @@ export function ReportsDashboard() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <fieldset
-          className="m-0 min-w-0 max-w-full border-0 p-0"
-        >
+        <fieldset className="m-0 min-w-0 max-w-full border-0 p-0">
           <legend className="sr-only">Report period</legend>
           <div className="flex max-w-full overflow-x-auto border-b border-border">
             {reportPeriods.map((period) => (
