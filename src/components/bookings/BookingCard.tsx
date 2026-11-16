@@ -45,7 +45,7 @@ export function RouteStop({
       )}
       <div>
         <p className="text-xs font-medium">{name}</p>
-        <p className="text-xs text-muted-foreground">{area}</p>
+        {area && <p className="text-xs text-muted-foreground">{area}</p>}
       </div>
     </div>
   );
