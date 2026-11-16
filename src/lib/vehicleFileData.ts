@@ -15,16 +15,66 @@ export type VehicleFiles = Record<string, VehicleFile | undefined>;
 export type FleetVehicleFiles = Record<string, VehicleFiles | undefined>;
 
 export const vehicleFileDefinitions: VehicleFileDefinition[] = [
-  { id: "officialReceipt", title: "OR (Official Receipt)", description: "Latest LTO registration receipt", required: true },
-  { id: "registration", title: "CR (Certificate of Registration)", description: "Photo or PDF scan", required: true },
-  { id: "chassisPhoto", title: "Photo of chassis number", description: "Close-up, every character readable", required: true },
-  { id: "enginePhoto", title: "Photo of engine number", description: "Close-up, every character readable", required: true },
-  { id: "frontPhoto", title: "Vehicle photo: front with plate", description: "Clear photo", required: true },
-  { id: "sidePhoto", title: "Vehicle photo: side", description: "Clear photo", required: false },
-  { id: "backPhoto", title: "Vehicle photo: back with plate", description: "Clear photo", required: false },
-  { id: "insurance", title: "Insurance policy", description: "CTPL or comprehensive", required: false },
-  { id: "franchise", title: "LTFRB franchise (CPC)", description: "For trucks for hire, if you have one", required: false },
-  { id: "authorization", title: "Deed of sale or authorization letter", description: "If the CR is not in your company name", required: false },
+  {
+    id: "officialReceipt",
+    title: "OR (Official Receipt)",
+    description: "Latest LTO registration receipt",
+    required: true,
+  },
+  {
+    id: "registration",
+    title: "CR (Certificate of Registration)",
+    description: "Photo or PDF scan",
+    required: true,
+  },
+  {
+    id: "chassisPhoto",
+    title: "Photo of chassis number",
+    description: "Close-up, every character readable",
+    required: true,
+  },
+  {
+    id: "enginePhoto",
+    title: "Photo of engine number",
+    description: "Close-up, every character readable",
+    required: true,
+  },
+  {
+    id: "frontPhoto",
+    title: "Vehicle photo: front with plate",
+    description: "Clear photo",
+    required: true,
+  },
+  {
+    id: "sidePhoto",
+    title: "Vehicle photo: side",
+    description: "Clear photo",
+    required: false,
+  },
+  {
+    id: "backPhoto",
+    title: "Vehicle photo: back with plate",
+    description: "Clear photo",
+    required: false,
+  },
+  {
+    id: "insurance",
+    title: "Insurance policy",
+    description: "CTPL or comprehensive",
+    required: false,
+  },
+  {
+    id: "franchise",
+    title: "LTFRB franchise (CPC)",
+    description: "For trucks for hire, if you have one",
+    required: false,
+  },
+  {
+    id: "authorization",
+    title: "Deed of sale or authorization letter",
+    description: "If the CR is not in your company name",
+    required: false,
+  },
 ];
 
 const acceptedTypes = new Set(["image/jpeg", "image/png", "application/pdf"]);
@@ -44,7 +94,9 @@ export async function readVehicleFile(file: File): Promise<VehicleFile> {
       const image = await createImageBitmap(file);
       image.close();
     } catch {
-      throw new Error("This image could not be opened. Choose another JPG or PNG.");
+      throw new Error(
+        "This image could not be opened. Choose another JPG or PNG.",
+      );
     }
   } else {
     const header = await file.slice(0, 5).text();
@@ -53,10 +105,12 @@ export async function readVehicleFile(file: File): Promise<VehicleFile> {
 
   const url = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => typeof reader.result === "string"
-      ? resolve(reader.result)
-      : reject(new Error("The file could not be read."));
-    reader.onerror = () => reject(new Error("The file could not be read. Try again."));
+    reader.onload = () =>
+      typeof reader.result === "string"
+        ? resolve(reader.result)
+        : reject(new Error("The file could not be read."));
+    reader.onerror = () =>
+      reject(new Error("The file could not be read. Try again."));
     reader.readAsDataURL(file);
   });
 

@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FastMet Fleet
 
-## Getting Started
+Fleet management app built with Next.js App Router, TypeScript, and shadcn UI with Mira styling. The app source lives in `src/`.
 
-First, run the development server:
+## Requirements
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
+- Node.js 24
+- pnpm 12.11.2 (the version declared in `package.json`)
+- Git, for cloning the repository and installing Git hooks
+
+Use pnpm for dependencies and project commands. Keep `pnpm-lock.yaml`; do not generate an npm or Yarn lockfile.
+
+## Install and run
+
+From the repository directory:
+
+```sh
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [Operations overview](http://localhost:3000/operations/overview). The app currently has no `/` page, so use an application route rather than the root URL.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To use the project's alternate development port:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sh
+pnpm dev:custom
+```
 
-## Learn More
+Then open [Operations overview on port 4000](http://localhost:4000/operations/overview).
 
-To learn more about Next.js, take a look at the following resources:
+Changes to files in `src/` appear automatically while the development server is running. Stop the server with `Ctrl+C`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The current app uses sample data and does not require environment variables to start. Some interactions are demos; data persistence depends on the feature.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Production mode
 
-## Deploy on Vercel
+```sh
+pnpm build
+pnpm start
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Build first, then start the production server. Open [Operations overview](http://localhost:3000/operations/overview).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Available commands
+
+| Command             | Purpose                                          |
+| ------------------- | ------------------------------------------------ |
+| `pnpm dev`          | Start development on port 3000                   |
+| `pnpm dev:custom`   | Start development on port 4000                   |
+| `pnpm build`        | Create a production build                        |
+| `pnpm start`        | Serve the production build                       |
+| `pnpm lint`         | Run the project ESLint checks                    |
+| `pnpm lint:ox`      | Run Oxlint checks                                |
+| `pnpm typecheck`    | Check TypeScript using the project configuration |
+| `pnpm format`       | Format supported files across the repository     |
+| `pnpm format:check` | Check formatting without modifying files         |
+
+## Git hooks and CI
+
+Dependency installation attempts to configure Husky automatically.
+
+- **Before committing:** lint-staged runs Oxlint, ESLint, and Prettier on staged source files, in that order. Staged JSON, CSS, Markdown, and YAML files run through Prettier only. Successful fixes are re-staged automatically.
+- **Before pushing:** the hook runs the project TypeScript check. A failure blocks the push.
+- **In GitHub Actions:** the `Checks` and `Build` jobs validate formatting, linting, TypeScript, and production compilation for pull requests and pushes to `main` and `dev`.
+
+Local hooks do not replace CI. Required status checks must also be configured in GitHub branch protection. No test suite or Electron project is configured yet.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development rules and [AGENTS.md](AGENTS.md) for coding-agent instructions.
+
+## Troubleshooting
+
+- **Port is occupied:** stop the existing server or use `pnpm dev:custom` for port 4000.
+- **Git hooks are missing:** run `pnpm exec husky`, then check `git config --get core.hooksPath`; it should report `.husky/_`.
+- **Formatting fails:** run `pnpm format`, review the changes, and stage the files you intend to commit.
+- **Type checking blocks a push:** run `pnpm typecheck`, fix the reported errors, and retry.
+- **Dependency installation fails in CI:** ensure `package.json` and `pnpm-lock.yaml` are both updated using `pnpm install` and included in the same change.

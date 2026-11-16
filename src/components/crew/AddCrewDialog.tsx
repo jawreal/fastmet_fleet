@@ -5,7 +5,11 @@ import { CalendarIcon, PlusIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -63,7 +67,11 @@ function CrewDatePicker({ id, name }: Readonly<{ id: string; name: string }>) {
 
   return (
     <>
-      <input type="hidden" name={name} value={date ? format(date, "yyyy-MM-dd") : ""} />
+      <input
+        type="hidden"
+        name={name}
+        value={date ? format(date, "yyyy-MM-dd") : ""}
+      />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={

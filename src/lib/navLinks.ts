@@ -29,10 +29,26 @@ const navigationLinks: Readonly<INavigationLinks[]> = [
   {
     label: "Operations",
     items: [
-      { title: "Overview", url: "/operations/overview", icon: LayoutDashboardIcon },
-      { title: "Bookings", url: "/operations/bookings", icon: ClipboardListIcon },
-      { title: "Live tracking", url: "/operations/live-tracking", icon: MapPinIcon },
-      { title: "Messages", url: "/operations/messages", icon: MessageSquareIcon },
+      {
+        title: "Overview",
+        url: "/operations/overview",
+        icon: LayoutDashboardIcon,
+      },
+      {
+        title: "Bookings",
+        url: "/operations/bookings",
+        icon: ClipboardListIcon,
+      },
+      {
+        title: "Live tracking",
+        url: "/operations/live-tracking",
+        icon: MapPinIcon,
+      },
+      {
+        title: "Messages",
+        url: "/operations/messages",
+        icon: MessageSquareIcon,
+      },
     ],
   },
   {
@@ -62,7 +78,11 @@ const navigationLinks: Readonly<INavigationLinks[]> = [
         icon: CreditCardIcon,
       },
       { title: "Reports", url: "/business/reports", icon: ChartColumnIcon },
-      { title: "Settings", url: "/business/settings", icon: SlidersHorizontalIcon },
+      {
+        title: "Settings",
+        url: "/business/settings",
+        icon: SlidersHorizontalIcon,
+      },
     ],
   },
 ];

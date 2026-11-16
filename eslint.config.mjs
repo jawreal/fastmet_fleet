@@ -5,7 +5,7 @@ import oxlint from "eslint-plugin-oxlint";
 const eslintConfig = [
   ...nextVitals,
   ...nextTs,
-  ...oxlint.buildFromOxlintConfigFile('./.oxlintrc.json'),
+  ...oxlint.buildFromOxlintConfigFile("./.oxlintrc.json"),
 ];
 
 export default eslintConfig;

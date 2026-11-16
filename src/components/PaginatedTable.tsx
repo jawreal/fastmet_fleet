@@ -9,11 +9,30 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import { ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
 const features = tableFeatures({
@@ -66,8 +85,12 @@ export function PaginatedTable<TData extends object>({
     onPaginationChange: setPagination,
   });
   const rowCount = data.length;
-  const start = rowCount === 0 ? 0 : pagination.pageIndex * pagination.pageSize + 1;
-  const end = Math.min((pagination.pageIndex + 1) * pagination.pageSize, rowCount);
+  const start =
+    rowCount === 0 ? 0 : pagination.pageIndex * pagination.pageSize + 1;
+  const end = Math.min(
+    (pagination.pageIndex + 1) * pagination.pageSize,
+    rowCount,
+  );
 
   function handlePageSizeChange(value: string | null) {
     if (!value) return;
@@ -79,12 +102,22 @@ export function PaginatedTable<TData extends object>({
 
   return (
     <>
-      <Table aria-labelledby={labelledBy} className={cn("tabular-nums", className)}>
+      <Table
+        aria-labelledby={labelledBy}
+        className={cn("tabular-nums", className)}
+      >
         <TableHeader className="bg-muted/30">
           {table.getHeaderGroups().map((group) => (
             <TableRow key={group.id}>
               {group.headers.map((header, index) => (
-                <TableHead key={header.id} scope="col" className={cn("px-4 text-muted-foreground", columns[index].className)}>
+                <TableHead
+                  key={header.id}
+                  scope="col"
+                  className={cn(
+                    "px-4 text-muted-foreground",
+                    columns[index].className,
+                  )}
+                >
                   {header.isPlaceholder ? null : <FlexRender header={header} />}
                 </TableHead>
               ))}
@@ -92,45 +125,76 @@ export function PaginatedTable<TData extends object>({
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows.length ? table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.getAllCells().map((cell, index) => (
-                <TableCell key={cell.id} className={cn("px-4 py-3", columns[index].className)}>
-                  <FlexRender cell={cell} />
-                </TableCell>
-              ))}
+          {table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getAllCells().map((cell, index) => (
+                  <TableCell
+                    key={cell.id}
+                    className={cn("px-4 py-3", columns[index].className)}
+                  >
+                    <FlexRender cell={cell} />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell
+                colSpan={columns.length}
+                className="h-24 text-center text-muted-foreground"
+              >
+                No results.
+              </TableCell>
             </TableRow>
-          )) : (
-            <TableRow><TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">No results.</TableCell></TableRow>
           )}
         </TableBody>
         {columns.some((column) => column.footer !== undefined) && (
           <TableFooter>
             <TableRow>
               {columns.map((column) => (
-                <TableCell key={column.id} className={cn("px-4 py-3", column.className)}>{column.footer}</TableCell>
+                <TableCell
+                  key={column.id}
+                  className={cn("px-4 py-3", column.className)}
+                >
+                  {column.footer}
+                </TableCell>
               ))}
             </TableRow>
           </TableFooter>
         )}
       </Table>
       <div className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 text-xs text-muted-foreground">
-        <p aria-live="polite">{start}–{end} of {rowCount} rows</p>
+        <p aria-live="polite">
+          {start}–{end} of {rowCount} rows
+        </p>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <Label htmlFor={pageSizeId}>Rows per page</Label>
             <Select
               value={String(pagination.pageSize)}
               onValueChange={handlePageSizeChange}
-              items={[5, 10, 20, 50].map((size) => ({ label: String(size), value: String(size) }))}
+              items={[5, 10, 20, 50].map((size) => ({
+                label: String(size),
+                value: String(size),
+              }))}
             >
-              <SelectTrigger id={pageSizeId} className="w-16"><SelectValue /></SelectTrigger>
+              <SelectTrigger id={pageSizeId} className="w-16">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {[5, 10, 20, 50].map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
+                {[5, 10, 20, 50].map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-          <span>Page {pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}</span>
+          <span>
+            Page {pagination.pageIndex + 1} of{" "}
+            {Math.max(1, table.getPageCount())}
+          </span>
           <div className="flex gap-1">
             <Button
               type="button"
