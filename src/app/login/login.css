@@ -1,0 +1,20 @@
+.fleet-login-brand-panel {
+  background-color: var(--background);
+  background-image:
+    linear-gradient(
+      color-mix(in oklab, var(--foreground) 4%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--foreground) 4%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 48px 48px;
+}
+
+.fleet-login-driver-image {
+  filter: drop-shadow(
+    0 12px 20px color-mix(in oklab, var(--foreground) 12%, transparent)
+  );
+}
