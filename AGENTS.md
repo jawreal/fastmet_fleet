@@ -1,9 +1,37 @@
 # Agent development rules
 
+## Fleet authentication context
+
+- Read [the fleet authentication context](docs/authentication-context.md) before planning or changing authentication, onboarding, or related routing in this project. Apply its constraints throughout this folder and its subfolders where relevant.
+- This document records requirements, not completed functionality or authorization to implement them. Wait for an explicit implementation request before starting the authentication build.
+- Keep fleet frontend work separate from backend provisioning and the main admin app. Preserve the existing development rules below.
+
+## WSL2 Ubuntu environment
+
+- This project runs in WSL2 Ubuntu. Run every command in Linux bash, never PowerShell, CMD, or Windows Node.
+- Keep the repository in the Linux filesystem (for example, `/home/jorel/projects/<repo>`). Use the existing Linux checkout; do not move it to or work from `/mnt/c/...`. Use Linux paths in commands and file references.
+- Before running project commands, verify the environment from the repository directory:
+
+  ```bash
+  uname -a
+  head -2 /etc/os-release
+  which node pnpm
+  pnpm exec oxlint --version
+  ```
+
+  Expect Linux with `microsoft` / WSL2, Ubuntu, Node and pnpm under `/home/jorel/.nvm/`, and an Oxlint version.
+
+- If a check shows a Windows executable path or an application-control blocking error, stop and tell the user. Do not work around it by changing dependencies or checks.
+- Windows Smart App Control blocks Oxlint's unsigned native binary on this machine. Its “Cannot find native binding” error alongside “An Application Control policy has blocked this file” means the command is running on Windows; run it in Ubuntu.
+- Never add OS-specific bindings such as `@oxlint/binding-win32-x64-msvc`, or edit `package.json` / `pnpm-lock.yaml` just to resolve tooling errors. Preserve Oxlint, `eslint-plugin-oxlint`, lint-staged, and Husky hooks.
+- Do not copy `node_modules` between Windows and Ubuntu. If dependencies are broken, remove the repository's `node_modules` and reinstall in Ubuntu with `pnpm install --frozen-lockfile`.
+- `/bin/sh^M: bad interpreter` indicates a Windows script or CRLF line endings; use Linux Node/pnpm and LF scripts. `wsl: command not found` inside Ubuntu is expected: `wsl` is a Windows command.
+
 ## Dependencies and runtime
 
 - Use Node.js 24 and the pnpm version declared in `package.json`.
 - Use pnpm for dependency installation and project scripts. Do not introduce `package-lock.json`, `yarn.lock`, or another package manager.
+- Install existing dependencies with `pnpm install --frozen-lockfile`.
 - Include `pnpm-lock.yaml` whenever dependency changes require it. Never edit the lockfile manually or bypass frozen-lockfile failures in CI.
 - Keep dependency changes relevant to the task. Do not upgrade unrelated packages or approve package-provided agent skills automatically.
 
@@ -18,7 +46,7 @@
 
 - Preserve the `prepare` script and Husky hooks. Pre-commit runs lint-staged: Oxlint, ESLint, and Prettier sequentially for staged JS/TS; Prettier only for staged JSON/CSS/Markdown/YAML. Never run whole-project lint, formatting, TypeScript, or builds in pre-commit.
 - Pre-push runs the project TypeScript check. Do not pass staged filenames to TypeScript; it must read the project configuration. Add the separate Electron project check only once Electron is configured.
-- Do not bypass hooks with `HUSKY=0`, `--no-verify`, or Git configuration changes during local commits unless the user explicitly requests it. The existing `HUSKY=0` setting in CI is intentional.
+- Do not bypass hooks with `HUSKY=0`, `--no-verify`, or Git configuration changes during local commits. Fix the cause of hook failures in Ubuntu. The existing `HUSKY=0` setting in CI is intentional.
 - Inspect staged changes before committing. Respect partial staging and do not stage unrelated user changes unless asked to stage everything.
 - Commit only when requested. Use `feat(page-name): description`, `fix(page-name): description`, or an appropriate Conventional Commit type and scope.
 - Do not push, amend commits, or rewrite history unless requested.
