@@ -21,7 +21,7 @@ export function StepHeader({
       {step && (
         <p className="text-xs font-medium text-muted-foreground">{step}</p>
       )}
-      <h1 id="auth-heading" className="text-2xl font-medium tracking-tight">
+      <h1 id="auth-heading" className="text-3xl font-semibold tracking-tight">
         {title}
       </h1>
       <p className="text-sm leading-6 text-muted-foreground">{description}</p>
@@ -53,6 +53,7 @@ export function useFormMessage() {
   ) : null;
   return { report, clear: () => setMessage(""), alert };
 }
+
 export function PasswordField({
   id,
   label,
@@ -81,13 +82,13 @@ export function PasswordField({
           aria-describedby={["password-requirements", error && `${id}-error`]
             .filter(Boolean)
             .join(" ")}
-          className="h-8 pr-10 text-base md:text-xs"
+          className="h-11 pr-12 text-base sm:text-sm"
         />
         <Button
           type="button"
           variant="ghost"
           size="icon-lg"
-          className="absolute top-0 right-0"
+          className="absolute top-0 right-0 size-11"
           aria-label={`${visible ? "Hide" : "Show"} ${label.toLowerCase()}`}
           aria-pressed={visible}
           aria-controls={id}
@@ -113,7 +114,7 @@ export function SubmitButton({
   return (
     <Button
       type="submit"
-      className="h-8 w-full hover:bg-primary"
+      className="h-11 w-full text-sm transition-colors duration-150"
       disabled={busy || disabled}
     >
       {busy && (
@@ -155,7 +156,7 @@ export function CodeField({
         disabled={busy}
         aria-invalid={!!error}
         aria-describedby={`code-help${error ? " code-error" : ""}`}
-        className={`h-10 text-base ${recovery ? "font-mono" : "text-center font-mono tracking-[0.5em]"}`}
+        className={`h-11 text-base ${recovery ? "font-mono" : "text-center font-mono tracking-[0.5em]"}`}
       />
       <p id="code-help" className="text-xs leading-5 text-muted-foreground">
         {recovery

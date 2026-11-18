@@ -5,6 +5,7 @@ import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
+  ArrowRight,
   Eye,
   EyeOff,
   LoaderCircle,
@@ -27,7 +28,7 @@ interface LoginFormProps {
 }
 
 const textLink =
-  "rounded-md text-xs font-medium text-foreground underline-offset-4 transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
+  "inline-flex min-h-8 items-center rounded-sm text-xs font-medium text-foreground underline-offset-4 transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
 
 export function LoginForm({
   onSubmit = submitLogin,
@@ -66,12 +67,15 @@ export function LoginForm({
 
   return (
     <div className="w-full">
-      <header className="mb-8 space-y-2">
-        <h1 id="auth-heading" className="text-2xl font-medium tracking-tight">
-          Sign in to your account
+      <header className="mb-8 space-y-3">
+        <p className="text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
+          Your workspace
+        </p>
+        <h1 id="auth-heading" className="text-3xl font-semibold tracking-tight">
+          Welcome back
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Welcome back. Enter your work credentials.
+        <p className="text-sm leading-6 text-muted-foreground">
+          Sign in with your work email to manage your fleet.
         </p>
       </header>
       <form
@@ -79,11 +83,12 @@ export function LoginForm({
         onSubmit={(event) => void form.handleSubmit(handleSubmit)(event)}
         aria-busy={busy}
       >
-        <FieldGroup>
+        <FieldGroup className="gap-5">
           {message && (
             <Alert
               ref={alertRef}
               tabIndex={-1}
+              role="alert"
               className="rounded-md focus-visible:outline-2 focus-visible:outline-ring"
             >
               <AlertCircle aria-hidden="true" />
@@ -97,7 +102,7 @@ export function LoginForm({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid} className="gap-2">
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="email">Work email</FieldLabel>
                 <Input
                   {...field}
                   id="email"
@@ -111,7 +116,7 @@ export function LoginForm({
                   aria-describedby={
                     fieldState.invalid ? "email-error" : undefined
                   }
-                  className="h-8 text-base md:text-xs"
+                  className="h-11 text-base sm:text-sm"
                 />
                 {fieldState.invalid && (
                   <FieldError id="email-error" errors={[fieldState.error]} />
@@ -151,13 +156,13 @@ export function LoginForm({
                     aria-describedby={
                       fieldState.invalid ? "password-error" : undefined
                     }
-                    className="h-8 pr-10 text-base md:text-xs"
+                    className="h-11 pr-12 text-base sm:text-sm"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute top-0 right-0 size-8 rounded-md transition-colors duration-150"
+                    className="absolute top-0 right-0 size-11 rounded-md transition-colors duration-150"
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
@@ -183,7 +188,7 @@ export function LoginForm({
             name="keepSignedIn"
             control={form.control}
             render={({ field }) => (
-              <Field orientation="horizontal" className="gap-2">
+              <Field orientation="horizontal" className="min-h-8 gap-2">
                 <Checkbox
                   id="keep-signed-in"
                   name={field.name}
@@ -202,7 +207,7 @@ export function LoginForm({
           <Button
             type="submit"
             disabled={busy}
-            className="h-8 w-full rounded-md transition-colors duration-150 hover:bg-primary"
+            className="h-11 w-full gap-2 rounded-md text-sm text-primary-foreground transition-colors duration-150"
           >
             {form.formState.isSubmitting && (
               <LoaderCircle
@@ -211,12 +216,13 @@ export function LoginForm({
               />
             )}
             {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
+            {!busy && <ArrowRight aria-hidden="true" className="size-4" />}
           </Button>
         </FieldGroup>
       </form>
-      <footer className="mt-8 space-y-6 text-center">
+      <footer className="mt-7 space-y-6">
         <p className="text-xs leading-5 text-muted-foreground">
-          Don&apos;t have an account?
+          Need access to FastMet Fleet?
           <br />
           <button
             type="button"
@@ -230,7 +236,7 @@ export function LoginForm({
             Contact your administrator
           </button>
         </p>
-        <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <p className="flex items-center gap-2 border-t pt-5 text-xs leading-5 text-muted-foreground">
           <LockKeyhole aria-hidden="true" className="size-3" />
           Email and authenticator verification
         </p>

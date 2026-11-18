@@ -1,20 +1,9 @@
-.fleet-login-brand-panel {
-  background-color: var(--background);
-  background-image:
-    linear-gradient(
-      color-mix(in oklab, var(--foreground) 4%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in oklab, var(--foreground) 4%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 48px 48px;
+.fleet-auth-showcase {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%);
 }
 
-.fleet-login-driver-image {
-  filter: drop-shadow(
-    0 12px 20px color-mix(in oklab, var(--foreground) 12%, transparent)
-  );
+.fleet-auth-devices {
+  filter: drop-shadow(0 8px 12px oklch(0 0 0 / 14%));
 }
