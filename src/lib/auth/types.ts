@@ -1,0 +1,72 @@
+import type { LoginValues } from "./login";
+
+export type AuthState =
+  | { status: "SIGNED_OUT"; nextAction: "login"; reason?: "CHALLENGE_EXPIRED" }
+  | {
+      status: "PASSWORD_CHANGE_REQUIRED";
+      nextAction: "changePassword";
+      expiresAt: number;
+    }
+  | {
+      status: "TWO_FACTOR_SETUP_REQUIRED";
+      nextAction: "getTwoFactorSetup" | "confirmTwoFactorSetup";
+      expiresAt: number;
+    }
+  | {
+      status: "TWO_FACTOR_REQUIRED";
+      nextAction: "verifyTwoFactor" | "verifyRecoveryCode";
+      expiresAt: number;
+    }
+  | {
+      status: "RECOVERY_CODES_REQUIRED";
+      nextAction: "acknowledgeRecoveryCodes";
+      expiresAt: number;
+      recoveryCodes: readonly string[];
+    }
+  | { status: "AUTHENTICATED"; nextAction: "continue" };
+
+export interface TwoFactorSetup {
+  state: Extract<AuthState, { status: "TWO_FACTOR_SETUP_REQUIRED" }>;
+  manualKey: string;
+  provisioningUri: string;
+  demo: boolean;
+}
+
+export interface AuthAdapter {
+  login(values: LoginValues): Promise<AuthState>;
+  changePassword(values: {
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<AuthState>;
+  getTwoFactorSetup(): Promise<TwoFactorSetup>;
+  confirmTwoFactorSetup(code: string): Promise<AuthState>;
+  verifyTwoFactor(code: string): Promise<AuthState>;
+  verifyRecoveryCode(code: string): Promise<AuthState>;
+  acknowledgeRecoveryCodes(): Promise<AuthState>;
+  getAuthState(): Promise<AuthState>;
+  logout(): Promise<AuthState>;
+}
+
+export class AuthError extends Error {
+  constructor(
+    public readonly code:
+      | "INVALID_CODE"
+      | "CODE_EXPIRED"
+      | "CHALLENGE_EXPIRED"
+      | "STEP_UNAVAILABLE"
+      | "UNCONNECTED",
+    message: string,
+  ) {
+    super(message);
+    this.name = "AuthError";
+  }
+}
+
+export const authRoutes: Record<AuthState["status"], string> = {
+  SIGNED_OUT: "/login",
+  PASSWORD_CHANGE_REQUIRED: "/change-password",
+  TWO_FACTOR_SETUP_REQUIRED: "/two-factor/setup",
+  TWO_FACTOR_REQUIRED: "/two-factor/verify",
+  RECOVERY_CODES_REQUIRED: "/two-factor/recovery-codes",
+  AUTHENTICATED: "/operations/overview",
+};

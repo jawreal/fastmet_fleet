@@ -62,6 +62,13 @@
 - Do not change repository settings or enable branch protection without a user request. Document required GitHub settings in `CONTRIBUTING.md`.
 - Never commit secrets, credentials, generated build output, or `.env` files.
 
+## Component filenames
+
+- Use PascalCase filenames for React component modules outside `src/components/ui` (for example, `LoginForm.tsx` and `AuthShell.tsx`). Component identifiers must also use PascalCase.
+- Exception: preserve existing filenames and shadcn CLI naming conventions in `src/components/ui`; do not convert this folder to PascalCase. Keep imports/re-exports aligned with the exact filename casing.
+- Keep component directories in their existing format. This rule does not rename hooks, utilities, stylesheets, or Next.js framework files such as `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, and `not-found.tsx`.
+- Update references when renaming a component; do not keep duplicate modules with different casing.
+
 ## UI conventions
 
 - Use shadcn UI Mira styling: compact controls, consistent spacing, restrained typography, and existing theme tokens.

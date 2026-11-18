@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { loginSchema, submitLogin, type LoginValues } from "@/lib/auth/login";
 
 interface LoginFormProps {
-  onSubmit?: (values: LoginValues) => Promise<void>;
+  onSubmit?: (values: LoginValues) => Promise<unknown>;
 }
 
 const textLink =
@@ -67,7 +67,7 @@ export function LoginForm({
   return (
     <div className="w-full">
       <header className="mb-8 space-y-2">
-        <h1 id="login-heading" className="text-2xl font-medium tracking-tight">
+        <h1 id="auth-heading" className="text-2xl font-medium tracking-tight">
           Sign in to your account
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -202,7 +202,7 @@ export function LoginForm({
           <Button
             type="submit"
             disabled={busy}
-            className="h-8 w-full rounded-md transition-colors duration-150"
+            className="h-8 w-full rounded-md transition-colors duration-150 hover:bg-primary"
           >
             {form.formState.isSubmitting && (
               <LoaderCircle
@@ -232,7 +232,7 @@ export function LoginForm({
         </p>
         <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <LockKeyhole aria-hidden="true" className="size-3" />
-          Protected by enterprise-grade security
+          Email and authenticator verification
         </p>
       </footer>
     </div>
