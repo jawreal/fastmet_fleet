@@ -104,34 +104,39 @@ export default function LandingPage() {
       >
         Skip to content
       </a>
-      <header className={frame}>
-        <div className="grid min-h-18 grid-cols-[1fr_auto] items-center gap-x-3 py-3 md:grid-cols-[1fr_auto_1fr]">
-          <Brand />
-          <nav
-            aria-label="Main navigation"
-            className="col-span-2 row-start-2 flex flex-wrap gap-x-5 md:col-span-1 md:col-start-2 md:row-start-1 md:gap-x-7"
-          >
-            {sectionLinks.map(({ href, label }) => (
-              <a
-                key={href}
-                href={href}
-                className={`${navLink} text-muted-foreground hover:text-foreground`}
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-          <div className="col-start-2 row-start-1 flex items-center justify-end gap-2 sm:gap-3 md:col-start-3">
-            <ThemeToggle />
-            <SignInLink />
+
+      {/* ------------- NAVBAR ---------------- */}
+      <header className="w-full sticky top-0 border-b bg-background z-10">
+        <div className={frame}>
+          <div className="grid min-h-18 grid-cols-[1fr_auto] items-center gap-x-3 py-3 md:grid-cols-[1fr_auto_1fr]">
+            <Brand />
+            <nav
+              aria-label="Main navigation"
+              className="col-span-2 row-start-2 flex flex-wrap gap-x-5 md:col-span-1 md:col-start-2 md:row-start-1 md:gap-x-7"
+            >
+              {sectionLinks.map(({ href, label }) => (
+                <a
+                  key={href}
+                  href={href}
+                  className={`${navLink} text-muted-foreground hover:text-foreground`}
+                >
+                  {label}
+                </a>
+              ))}
+            </nav>
+            <div className="col-start-2 row-start-1 flex items-center justify-end gap-2 sm:gap-3 md:col-start-3">
+              <ThemeToggle />
+              <SignInLink />
+            </div>
           </div>
         </div>
       </header>
 
+      {/* ------------- HERO ---------------- */}
       <main id="main" tabIndex={-1}>
         <section
           aria-labelledby="hero-heading"
-          className="fleet-showcase-surface border-t"
+          className="fleet-showcase-surface"
         >
           <div className={frame}>
             <div className="mx-auto max-w-4xl pt-12 pb-9 text-center sm:pt-16 sm:pb-12">
@@ -208,6 +213,7 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ------------- FLEET IN VIEW ---------------- */}
         <section
           id="operations"
           aria-labelledby="operations-heading"
@@ -247,6 +253,7 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ------------- GETTING STARTED WITH FLEET ---------------- */}
         <section
           id="getting-started"
           aria-labelledby="getting-started-heading"
@@ -280,8 +287,10 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ------------- FAQ ---------------- */}
         <FleetFaq />
 
+        {/* -------------ALREADY HAVE AN ACCOUNT ---------------- */}
         <section aria-labelledby="access-heading" className="border-y bg-muted">
           <div className={frame}>
             <div className="grid items-center gap-7 border-l-4 border-primary py-10 pl-5 sm:grid-cols-[1fr_auto] sm:py-12 sm:pl-8">
@@ -306,6 +315,7 @@ export default function LandingPage() {
         </section>
       </main>
 
+      {/* ------------- FOOTER ---------------- */}
       <footer className="dark bg-stone-950 text-foreground">
         <div className={frame}>
           <div className="grid gap-9 py-12 sm:grid-cols-[1fr_auto] sm:gap-12 md:py-16">
