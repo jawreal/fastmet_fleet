@@ -1,0 +1,22 @@
+.fleet-landing-hero {
+  background-color: color-mix(in oklab, var(--background) 96%, var(--primary));
+}
+
+.fleet-landing-hero-art::before,
+.fleet-landing-hero-art::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.fleet-landing-hero-art::before {
+  background: color-mix(in oklab, var(--primary) 28%, var(--background));
+  clip-path: polygon(0 72%, 100% 4%, 100% 44%, 0 100%);
+}
+
+.fleet-landing-hero-art::after {
+  background: var(--primary);
+  clip-path: polygon(0 89%, 100% 25%, 100% 32%, 0 96%);
+}
