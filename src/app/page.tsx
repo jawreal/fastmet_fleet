@@ -131,7 +131,7 @@ export default function LandingPage() {
       <main id="main" tabIndex={-1}>
         <section
           aria-labelledby="hero-heading"
-          className="fleet-showcase-surface border-y"
+          className="fleet-showcase-surface border-t"
         >
           <div className={frame}>
             <div className="mx-auto max-w-4xl pt-12 pb-9 text-center sm:pt-16 sm:pb-12">
@@ -167,29 +167,39 @@ export default function LandingPage() {
         <section
           id="platform"
           aria-labelledby="platform-heading"
-          className={frame}
+          className="fleet-showcase-surface"
         >
-          <div className="py-16 sm:py-24">
-            <div className="grid gap-4 lg:grid-cols-2 lg:items-end lg:gap-12">
-              <h2 id="platform-heading" className={sectionHeading}>
-                From the next booking to the monthly review.
-              </h2>
-              <p className="max-w-md text-base leading-7 text-muted-foreground">
-                Keep trip details, fleet records, and business reporting in the
-                same workspace so your team can see how the pieces fit together.
-              </p>
-            </div>
-            <ul className="mt-8 grid divide-y border-y md:grid-cols-3 md:divide-x md:divide-y-0">
+          <div
+            className={`${frame} grid gap-y-4 py-16 sm:py-24 lg:grid-cols-12 lg:items-baseline-last`}
+          >
+            <h2
+              id="platform-heading"
+              className="text-3xl leading-[1.03] font-semibold tracking-[-0.055em] text-balance sm:text-4xl lg:col-span-7 lg:text-5xl"
+            >
+              From the next booking to the{" "}
+              <span className="text-primary-foreground dark:text-primary">
+                monthly review.
+              </span>
+            </h2>
+            <p className="max-w-lg text-lg leading-7 text-foreground/85 lg:col-span-4 lg:col-start-9 lg:pl-6">
+              Keep trip details, fleet records, and business reporting in the
+              same workspace so your team can see how the pieces fit together.
+            </p>
+            <ul className="col-span-full mt-8 grid divide-y border-y md:grid-cols-3 md:divide-x md:divide-y-0 lg:mt-10 lg:grid-cols-subgrid">
               {capabilities.map(({ title, description, icon: Icon }) => (
                 <li
                   key={title}
-                  className="py-5 md:px-6 md:py-7 md:first:pl-0 md:last:pr-0"
+                  className="py-6 md:px-3 md:py-8 md:first:pl-0 md:last:pr-0 lg:col-span-4 lg:px-6"
                 >
-                  <Icon aria-hidden="true" className="mb-3 size-5" />
+                  <Icon
+                    aria-hidden="true"
+                    strokeWidth={1.5}
+                    className="mb-3 size-5 text-primary"
+                  />
                   <h3 className="text-lg font-semibold tracking-tight">
                     {title}
                   </h3>
-                  <p className="mt-1.5 max-w-sm text-sm leading-6 text-muted-foreground">
+                  <p className="mt-2 max-w-[33ch] text-sm leading-6 text-muted-foreground">
                     {description}
                   </p>
                 </li>
