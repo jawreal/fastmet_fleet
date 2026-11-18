@@ -10,10 +10,10 @@ import {
 import { Brand } from "@/components/auth/Brand";
 import { ThemeToggle } from "@/components/auth/ThemeToggle";
 import { FleetFaq } from "@/components/landing/FleetFaq";
-import { HeroPreview } from "@/components/landing/HeroPreview";
+import { FleetDashboardPreview } from "@/components/FleetDashboardPreview";
 import { OperationsPreview } from "@/components/landing/OperationsPreview";
 import { buttonVariants } from "@/components/ui/button";
-import "./landing.css";
+import "./fleet-showcase.css";
 
 export const metadata: Metadata = {
   title: "FastMet Fleet | Fleet operations in one workspace",
@@ -131,7 +131,7 @@ export default function LandingPage() {
       <main id="main" tabIndex={-1}>
         <section
           aria-labelledby="hero-heading"
-          className="fleet-landing-hero border-y"
+          className="fleet-showcase-surface border-y"
         >
           <div className={frame}>
             <div className="mx-auto max-w-4xl pt-12 pb-9 text-center sm:pt-16 sm:pb-12">
@@ -140,7 +140,9 @@ export default function LandingPage() {
                 className="text-[clamp(2.5rem,5.5vw,4.25rem)] leading-[1.03] font-semibold tracking-[-0.055em] text-balance"
               >
                 Run your fleet in{" "}
-                <span className="text-primary">one place.</span>
+                <span className="text-primary-foreground dark:text-primary">
+                  one place.
+                </span>
               </h1>
               <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-foreground/85 sm:text-lg sm:leading-8">
                 FastMet Fleet gives dispatchers and fleet managers one place to
@@ -155,9 +157,9 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          <div className="fleet-landing-hero-art relative isolate pb-8 sm:pb-12">
+          <div className="fleet-showcase-art relative isolate pb-8 sm:pb-12">
             <div className={frame}>
-              <HeroPreview />
+              <FleetDashboardPreview />
             </div>
           </div>
         </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -24,13 +24,15 @@ import { Input } from "@/components/ui/input";
 import { loginSchema, submitLogin, type LoginValues } from "@/lib/auth/login";
 
 interface LoginFormProps {
+  demoAccess?: ReactNode;
   onSubmit?: (values: LoginValues) => Promise<unknown>;
 }
 
 const textLink =
-  "inline-flex min-h-8 items-center rounded-sm text-xs font-medium text-foreground underline-offset-4 transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
+  "inline-flex min-h-8 items-center rounded-sm text-xs font-normal text-muted-foreground underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
 
 export function LoginForm({
+  demoAccess,
   onSubmit = submitLogin,
 }: Readonly<LoginFormProps>) {
   const [showPassword, setShowPassword] = useState(false);
@@ -68,9 +70,6 @@ export function LoginForm({
   return (
     <div className="w-full">
       <header className="mb-8 space-y-3">
-        <p className="text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
-          Your workspace
-        </p>
         <h1 id="auth-heading" className="text-3xl font-semibold tracking-tight">
           Welcome back
         </h1>
@@ -207,7 +206,7 @@ export function LoginForm({
           <Button
             type="submit"
             disabled={busy}
-            className="h-11 w-full gap-2 rounded-md text-sm text-primary-foreground transition-colors duration-150"
+            className="h-11 w-full gap-2 px-4 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
           >
             {form.formState.isSubmitting && (
               <LoaderCircle
@@ -218,6 +217,7 @@ export function LoginForm({
             {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
             {!busy && <ArrowRight aria-hidden="true" className="size-4" />}
           </Button>
+          {demoAccess}
         </FieldGroup>
       </form>
       <footer className="mt-7 space-y-6">
@@ -236,7 +236,7 @@ export function LoginForm({
             Contact your administrator
           </button>
         </p>
-        <p className="flex items-center gap-2 border-t pt-5 text-xs leading-5 text-muted-foreground">
+        <p className="flex items-center gap-2 border-t pt-5 text-xs leading-5 text-foreground/85">
           <LockKeyhole aria-hidden="true" className="size-3" />
           Email and authenticator verification
         </p>

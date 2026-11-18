@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { codeSchema, type CodeValues } from "@/lib/auth/schemas";
 import type { TwoFactorSetup } from "@/lib/auth/types";
 import { Button } from "@/components/ui/button";
+import { AuthFormSkeleton } from "./AuthFormSkeleton";
 import { AuthStep, type RunAuthAction } from "./AuthStep";
 import {
   CodeField,
@@ -72,9 +73,7 @@ function SetupForm({ run }: { run: RunAuthAction }) {
       />
       {message.alert}
       {loading ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          Preparing your setup code…
-        </p>
+        <AuthFormSkeleton fields={1} preparingSetup />
       ) : !setup ? (
         <Button
           variant="outline"

@@ -1,9 +1,9 @@
-.fleet-landing-hero {
+.fleet-showcase-surface {
   background-color: color-mix(in oklab, var(--background) 96%, var(--primary));
 }
 
-.fleet-landing-hero-art::before,
-.fleet-landing-hero-art::after {
+.fleet-showcase-art::before,
+.fleet-showcase-art::after {
   position: absolute;
   z-index: -1;
   inset: 0;
@@ -11,12 +11,13 @@
   pointer-events: none;
 }
 
-.fleet-landing-hero-art::before {
+.fleet-showcase-art::before {
   background: color-mix(in oklab, var(--primary) 28%, var(--background));
   clip-path: polygon(0 72%, 100% 4%, 100% 44%, 0 100%);
 }
 
-.fleet-landing-hero-art::after {
+.fleet-showcase-art::after {
   background: var(--primary);
+  opacity: var(--fleet-showcase-accent-opacity, 1);
   clip-path: polygon(0 89%, 100% 25%, 100% 32%, 0 96%);
 }

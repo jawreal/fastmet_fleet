@@ -1,5 +1,5 @@
 "use client";
-import { AuthStep } from "./AuthStep";
+import { AuthStep, demoNotice } from "./AuthStep";
 import { LoginForm } from "./LoginForm";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { mockAuthEnabled } from "@/lib/auth/adapter";
@@ -16,14 +16,23 @@ export function LoginStep() {
                 </AlertDescription>
               </Alert>
             )}
-          {mockAuthEnabled && (
-            <p className="text-xs leading-5 text-muted-foreground">
-              Demo: first@demo.example or returning@demo.example. Use any
-              synthetic password with at least 8 characters. Verification code:
-              012345.
-            </p>
-          )}
           <LoginForm
+            demoAccess={
+              mockAuthEnabled ? (
+                <aside
+                  aria-label="Demo access"
+                  className="space-y-1 rounded-md border border-dashed border-input px-3 py-2.5 text-xs leading-5 text-muted-foreground"
+                >
+                  <p className="font-medium text-foreground">Demo access</p>
+                  <p>{demoNotice}</p>
+                  <p>
+                    Use first@demo.example or returning@demo.example and any
+                    synthetic password with at least 8 characters. Verification
+                    code: <span className="font-mono">012345</span>.
+                  </p>
+                </aside>
+              ) : undefined
+            }
             onSubmit={(values) => run((adapter) => adapter.login(values))}
           />
         </>

@@ -11,9 +11,22 @@ import {
 } from "@/lib/auth/types";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuthFormSkeleton } from "./AuthFormSkeleton";
+
+export const demoNotice =
+  "Development demo · synthetic data only. No real session is created.";
 
 export type AuthAction = (adapter: AuthAdapter) => Promise<AuthState>;
 export type RunAuthAction = (action: AuthAction) => Promise<void>;
+
+const loadingFieldCounts = {
+  SIGNED_OUT: 2,
+  PASSWORD_CHANGE_REQUIRED: 2,
+  TWO_FACTOR_SETUP_REQUIRED: 1,
+  TWO_FACTOR_REQUIRED: 1,
+  RECOVERY_CODES_REQUIRED: 0,
+  AUTHENTICATED: 0,
+} satisfies Record<AuthState["status"], 0 | 1 | 2>;
 
 export function AuthStep({
   expected,
@@ -107,17 +120,13 @@ export function AuthStep({
     );
 
   if (!state || state.status !== expected)
-    return (
-      <p role="status" className="text-sm text-muted-foreground">
-        Restoring your sign-in step…
-      </p>
-    );
+    return <AuthFormSkeleton fields={loadingFieldCounts[expected]} />;
 
   return (
     <div className="w-full space-y-5">
-      {mockAuthEnabled && (
+      {mockAuthEnabled && expected !== "SIGNED_OUT" && (
         <p className="rounded-md border border-dashed p-3 text-xs leading-5 text-muted-foreground">
-          Development demo · synthetic data only. No real session is created.
+          {demoNotice}
         </p>
       )}
       {children(state, run)}
