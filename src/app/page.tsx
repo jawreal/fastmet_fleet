@@ -11,6 +11,7 @@ import { Brand } from "@/components/auth/Brand";
 import { ThemeToggle } from "@/components/auth/ThemeToggle";
 import { FleetStripes } from "@/components/landing/FleetStripes";
 import { FleetFaq } from "@/components/landing/FleetFaq";
+import { FleetMobileNav } from "@/components/landing/FleetMobileNav";
 import { FleetReveal } from "@/components/landing/FleetReveal";
 import { FleetDashboardPreview } from "@/components/FleetDashboardPreview";
 import { OperationsPreview } from "@/components/landing/OperationsPreview";
@@ -119,7 +120,7 @@ export default function LandingPage() {
             <Brand />
             <nav
               aria-label="Main navigation"
-              className="col-span-2 row-start-2 flex flex-wrap gap-x-5 md:col-span-1 md:col-start-2 md:row-start-1 md:gap-x-7"
+              className="hidden gap-x-7 md:flex"
             >
               {sectionLinks.map(({ href, label }) => (
                 <a
@@ -131,9 +132,15 @@ export default function LandingPage() {
                 </a>
               ))}
             </nav>
-            <div className="col-start-2 row-start-1 flex items-center justify-end gap-2 sm:gap-3 md:col-start-3">
+            <div className="flex items-center justify-end gap-2 sm:gap-3 max-md:[&>button]:size-11">
               <ThemeToggle />
-              <SignInLink />
+              <div className="hidden md:block">
+                <SignInLink />
+              </div>
+              <FleetMobileNav
+                links={sectionLinks}
+                signIn={<SignInLink primary />}
+              />
             </div>
           </div>
         </div>
@@ -175,6 +182,7 @@ export default function LandingPage() {
 
         <section
           id="platform"
+          tabIndex={-1}
           aria-labelledby="platform-heading"
           data-fleet-section=""
           className="fleet-tint-surface fleet-night-surface fleet-section"
@@ -220,6 +228,7 @@ export default function LandingPage() {
         {/* ------------- FLEET IN VIEW ---------------- */}
         <section
           id="operations"
+          tabIndex={-1}
           aria-labelledby="operations-heading"
           data-fleet-section=""
           className="dark fleet-dark-surface fleet-section"
@@ -270,6 +279,7 @@ export default function LandingPage() {
           <div className={`${frame} space-y-24 pb-5`}>
             <section
               id="getting-started"
+              tabIndex={-1}
               aria-labelledby="getting-started-heading"
               data-fleet-section=""
               className="space-y-10 mb-42 py-10"
