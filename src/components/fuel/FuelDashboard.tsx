@@ -190,6 +190,7 @@ export function FuelDashboard() {
     (sum, entry) => sum + entry.liters * entry.price,
     0,
   );
+
   const economies = fuelTrucks.map((truck) => {
     const fills = recent.filter((entry) => entry.plate === truck.plate);
     return {
@@ -206,6 +207,7 @@ export function FuelDashboard() {
     economyQuery,
     (truck) => [truck.plate, truck.type],
   );
+
   const filteredEntries = filterTableRows(entries, logQuery, (entry) => [
     entry.plate,
     entry.driver,
@@ -218,10 +220,12 @@ export function FuelDashboard() {
       timeZone: "Asia/Manila",
     }).format(new Date(`${entry.date}T12:00:00+08:00`)),
   ]).sort((a, b) => b.date.localeCompare(a.date) || b.odometer - a.odometer);
+
   const measuredLiters = economies.reduce(
     (sum, truck) => sum + truck.measuredLiters,
     0,
   );
+
   const metrics = [
     {
       title: "Diesel, last 30 days",
@@ -250,10 +254,12 @@ export function FuelDashboard() {
       icon: Route,
     },
   ];
+
   const logColumns = useMemo(
     () => createLogColumns(setDeletingEntry),
     [setDeletingEntry],
   );
+
   return (
     <div className="@container flex flex-col gap-5">
       <header className="space-y-1">

@@ -8,10 +8,9 @@ export const loginSchema = z.object({
 
 export type LoginValues = z.infer<typeof loginSchema>;
 
-// Replace this adapter with API calls. Never grant access from this UI stub.
-export async function submitLogin(values: LoginValues): Promise<void> {
+// Retained entry point for callers of the original login adapter.
+export async function submitLogin(values: LoginValues) {
   loginSchema.parse(values);
-  throw new Error(
-    "Sign-in is not connected yet. Contact your administrator for access.",
-  );
+  const { getAuthAdapter } = await import("./adapter");
+  return (await getAuthAdapter()).login(values);
 }

@@ -1,0 +1,240 @@
+@reference "./globals.css";
+
+:root {
+  --bg-light: #fefcf8;
+  --bg-tint: #faf6ee;
+  --bg-dark: #1c1917;
+  --bg-footer: #0c0a09;
+  --fleet-yellow: var(--primary);
+  --fleet-brown: var(--primary-foreground);
+}
+
+:root.dark {
+  --fleet-page-background: var(--bg-dark);
+  --fleet-page-foreground: var(--bg-light);
+  --fleet-page-tint: color-mix(in oklab, var(--bg-dark) 96%, var(--primary));
+}
+
+.fleet-landing {
+  --primary: var(--fleet-yellow);
+  --primary-foreground: var(--fleet-brown);
+  --background: var(--fleet-page-background, var(--bg-light));
+  --foreground: var(--fleet-page-foreground, var(--bg-dark));
+  --muted-foreground: color-mix(
+    in oklab,
+    var(--foreground) 75%,
+    var(--background)
+  );
+  --border: color-mix(in oklab, var(--foreground) 18%, var(--background));
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.fleet-landing .fleet-dark-surface,
+.fleet-landing .fleet-footer-surface {
+  --primary: var(--fleet-yellow);
+  --primary-foreground: var(--fleet-brown);
+  --background: var(--bg-dark);
+  --foreground: var(--bg-light);
+  --muted-foreground: color-mix(in oklab, var(--bg-light) 75%, var(--bg-dark));
+  --border: color-mix(in oklab, var(--bg-light) 20%, var(--bg-dark));
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.fleet-landing .fleet-footer-surface {
+  --background: var(--bg-footer);
+}
+
+.fleet-tint-surface {
+  background: var(--fleet-page-tint, var(--bg-tint));
+}
+
+:root.dark .fleet-night-surface {
+  @apply bg-stone-950;
+}
+
+.fleet-container {
+  @apply mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12;
+}
+
+.fleet-section {
+  @apply py-16 md:py-24;
+}
+
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .fleet-landing {
+    --fleet-motion-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .fleet-hero-fade {
+    animation: fleet-hero-fade 1s var(--fleet-motion-ease);
+  }
+
+  #main:not([data-fleet-reveal="off"])
+    [data-fleet-section]:not([data-fleet-visible])
+    [data-fleet-motion]:not(:focus-within) {
+    opacity: 0;
+    transform: var(--fleet-motion-start, translateY(24px));
+  }
+
+  /* Fail open if the landing page JavaScript cannot initialize. */
+  #main:not([data-fleet-reveal]) [data-fleet-motion]:not(:focus-within) {
+    animation: fleet-motion-fallback 0s 1500ms forwards;
+  }
+
+  #main[data-fleet-reveal="ready"]
+    [data-fleet-visible]
+    [data-fleet-motion]:not(:focus-within) {
+    transition:
+      opacity 600ms var(--fleet-motion-ease),
+      transform 600ms var(--fleet-motion-ease);
+    transition-delay: var(--fleet-motion-delay, 0ms);
+  }
+
+  [data-fleet-motion="item"] {
+    --fleet-motion-start: translateY(16px);
+  }
+
+  [data-fleet-motion="item"]:nth-child(2) {
+    --fleet-motion-delay: 100ms;
+  }
+
+  [data-fleet-motion="item"]:nth-child(3) {
+    --fleet-motion-delay: 200ms;
+  }
+
+  [data-fleet-motion="image-right"] {
+    --fleet-motion-start: scale(0.95);
+  }
+
+  @media (min-width: 48rem) {
+    [data-fleet-motion="left"] {
+      --fleet-motion-start: translateX(-16px);
+    }
+
+    [data-fleet-motion="image-right"] {
+      --fleet-motion-start: translateX(16px) scale(0.95);
+    }
+  }
+}
+
+@keyframes fleet-hero-fade {
+  from {
+    opacity: 0.6;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes fleet-motion-fallback {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fleet-landing section[id] {
+  @apply scroll-mt-32 md:scroll-mt-24;
+}
+
+.fleet-split {
+  @apply grid gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-12;
+}
+
+.fleet-preview-glass {
+  @apply border-white/65 bg-white/30 shadow-lg shadow-black/10 backdrop-blur-md dark:border-white/20 dark:bg-white/10;
+}
+
+.fleet-heading {
+  @apply text-3xl/tight font-semibold tracking-tight text-balance md:text-4xl/tight;
+}
+
+.fleet-copy {
+  @apply text-base leading-7;
+}
+
+.fleet-muted {
+  color: var(--muted-foreground);
+}
+
+.fleet-landing .fleet-button {
+  @apply h-11 gap-2 rounded-md px-6 text-sm font-medium;
+  transition: none;
+}
+
+.fleet-landing .fleet-button-primary {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.fleet-landing .fleet-button-primary:hover {
+  background: color-mix(in oklab, var(--primary) 90%, var(--bg-light));
+}
+
+.fleet-landing .fleet-button-secondary {
+  color: var(--foreground);
+  background: transparent;
+}
+
+/* Preserve the authentication showcase outside the landing page. */
+.fleet-showcase-surface {
+  background-color: color-mix(in oklab, var(--background) 96%, var(--primary));
+}
+
+.fleet-stripes::before,
+.fleet-stripes::after,
+.fleet-showcase-art::before,
+.fleet-showcase-art::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.fleet-stripes::before,
+.fleet-showcase-art::before {
+  background: color-mix(in oklab, var(--primary) 28%, var(--background));
+  clip-path: polygon(0 72%, 100% 4%, 100% 44%, 0 100%);
+}
+
+.fleet-stripes::after,
+.fleet-showcase-art::after {
+  background: var(--primary);
+  opacity: var(--fleet-showcase-accent-opacity, 1);
+  clip-path: polygon(0 89%, 100% 25%, 100% 32%, 0 96%);
+}
+
+.dark .fleet-landing h1 .text-primary-foreground,
+.dark .fleet-landing #platform-heading .text-primary-foreground {
+  color: var(--primary);
+}
+
+.fleet-access-panel::before,
+.fleet-access-panel::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.fleet-access-panel::before {
+  background: color-mix(in oklab, var(--primary) 24%, transparent);
+  clip-path: polygon(30% 100%, 100% 60%, 100% 100%);
+}
+
+.fleet-access-panel::after {
+  background: var(--primary);
+  clip-path: polygon(56% 100%, 100% 79%, 100% 86%, 68% 100%);
+}
+
+@media (max-width: 639px) {
+  .fleet-access-panel::before {
+    clip-path: polygon(15% 100%, 100% 87%, 100% 100%);
+  }
+
+  .fleet-access-panel::after {
+    clip-path: polygon(45% 100%, 100% 93%, 100% 96%, 68% 100%);
+  }
+}
