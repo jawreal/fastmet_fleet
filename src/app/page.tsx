@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/auth/Brand";
 import { ThemeToggle } from "@/components/auth/ThemeToggle";
+import { FleetStripes } from "@/components/landing/FleetStripes";
 import { FleetFaq } from "@/components/landing/FleetFaq";
 import { FleetDashboardPreview } from "@/components/FleetDashboardPreview";
 import { OperationsPreview } from "@/components/landing/OperationsPreview";
@@ -72,9 +73,12 @@ const onboarding = [
   },
 ];
 
-const frame = "mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12";
-const sectionHeading =
-  "max-w-xl text-3xl/tight font-semibold tracking-tight text-balance sm:text-4xl/tight";
+const frame = "fleet-container";
+const sectionHeading = "fleet-heading";
+const primaryButton =
+  "fleet-button fleet-button-primary focus-visible:ring-foreground/40";
+const secondaryButton =
+  "fleet-button fleet-button-secondary inline-flex items-center justify-center hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
 const footerPlatformLinks = sectionLinks.slice(0, 3);
 
 const navLink =
@@ -85,19 +89,21 @@ function SignInLink({ primary = false }: Readonly<{ primary?: boolean }>) {
     <Link
       href="/login"
       className={buttonVariants({
-        variant: primary ? "default" : "outline",
-        className:
-          "h-11 gap-2 px-4 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none",
+        variant: primary ? "default" : "link",
+        className: primary
+          ? primaryButton
+          : `${secondaryButton} text-foreground`,
       })}
     >
-      Sign in <ArrowRight aria-hidden="true" className="size-4" />
+      Sign in
+      {!primary && <ArrowRight aria-hidden="true" className="size-4" />}
     </Link>
   );
 }
 
 export default function LandingPage() {
   return (
-    <>
+    <div className="fleet-landing">
       <a
         href="#main"
         className="sr-only z-10 rounded-md bg-background p-3 text-sm focus:not-sr-only focus:absolute focus:top-4 focus:left-4"
@@ -106,7 +112,7 @@ export default function LandingPage() {
       </a>
 
       {/* ------------- NAVBAR ---------------- */}
-      <header className="w-full sticky top-0 border-b bg-background z-10">
+      <header className="sticky top-0 z-10 w-full border-b bg-background">
         <div className={frame}>
           <div className="grid min-h-18 grid-cols-[1fr_auto] items-center gap-x-3 py-3 md:grid-cols-[1fr_auto_1fr]">
             <Brand />
@@ -134,37 +140,33 @@ export default function LandingPage() {
 
       {/* ------------- HERO ---------------- */}
       <main id="main" tabIndex={-1}>
-        <section
-          aria-labelledby="hero-heading"
-          className="fleet-showcase-surface"
-        >
+        <section aria-labelledby="hero-heading" className="fleet-section">
           <div className={frame}>
-            <div className="mx-auto max-w-4xl pt-12 pb-9 text-center sm:pt-16 sm:pb-12">
+            <div className="mx-auto max-w-4xl pb-12 text-center">
               <h1
                 id="hero-heading"
-                className="text-[clamp(2.5rem,5.5vw,4.25rem)] leading-[1.03] font-semibold tracking-[-0.055em] text-balance"
+                className="text-4xl/tight font-semibold tracking-tight text-balance sm:text-5xl/tight lg:text-6xl/tight"
               >
                 Run your fleet in{" "}
-                <span className="text-primary-foreground dark:text-primary">
-                  one place.
-                </span>
+                <span className="text-primary-foreground">one place.</span>
               </h1>
-              <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-foreground/85 sm:text-lg sm:leading-8">
+              <p className="fleet-copy fleet-muted mx-auto mt-5 max-w-xl">
                 FastMet Fleet gives dispatchers and fleet managers one place to
                 organize bookings, vehicles, crews, and operating costs.
               </p>
               <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
                 <SignInLink primary />
-                <a href="#platform" className={navLink}>
+                <a href="#platform" className={secondaryButton}>
                   Explore the platform
                   <ArrowDown aria-hidden="true" className="ml-2 size-4" />
                 </a>
               </div>
             </div>
           </div>
-          <div className="fleet-showcase-art relative isolate pb-8 sm:pb-12">
+          <div className="relative isolate pb-8 sm:pb-12">
+            <FleetStripes className="top-0" />
             <div className={frame}>
-              <FleetDashboardPreview />
+              <FleetDashboardPreview sizes="(min-width: 1280px) 1166px, (min-width: 1024px) calc(100vw - 114px), (min-width: 640px) calc(100vw - 82px), calc(100vw - 54px)" />
             </div>
           </div>
         </section>
@@ -172,41 +174,32 @@ export default function LandingPage() {
         <section
           id="platform"
           aria-labelledby="platform-heading"
-          className="fleet-showcase-surface"
+          className="fleet-tint-surface fleet-section"
         >
-          <div
-            className={`${frame} grid gap-y-4 py-16 sm:py-24 lg:grid-cols-12 lg:items-baseline-last`}
-          >
-            <h2
-              id="platform-heading"
-              className="text-3xl leading-[1.03] font-semibold tracking-[-0.055em] text-balance sm:text-4xl lg:col-span-7 lg:text-5xl"
-            >
+          <div className={`${frame} fleet-split`}>
+            <h2 id="platform-heading" className={sectionHeading}>
               From the next booking to the{" "}
-              <span className="text-primary-foreground dark:text-primary">
-                monthly review.
-              </span>
+              <span className="text-primary-foreground">monthly review.</span>
             </h2>
-            <p className="max-w-lg text-lg leading-7 text-foreground/85 lg:col-span-4 lg:col-start-9 lg:pl-6">
+            <p className="fleet-copy fleet-muted max-w-xl">
               Keep trip details, fleet records, and business reporting in the
               same workspace so your team can see how the pieces fit together.
             </p>
-            <ul className="col-span-full mt-8 grid divide-y border-y md:grid-cols-3 md:divide-x md:divide-y-0 lg:mt-10 lg:grid-cols-subgrid">
+            <ul className="col-span-full grid divide-y border-t md:grid-cols-3 md:divide-x md:divide-y-0">
               {capabilities.map(({ title, description, icon: Icon }) => (
                 <li
                   key={title}
-                  className="py-6 md:px-3 md:py-8 md:first:pl-0 md:last:pr-0 lg:col-span-4 lg:px-6"
+                  className="py-6 md:px-6 md:py-8 md:first:pl-0 md:last:pr-0"
                 >
                   <Icon
                     aria-hidden="true"
                     strokeWidth={1.5}
-                    className="mb-3 size-5 text-primary"
+                    className="mb-4 size-5 text-primary-foreground"
                   />
                   <h3 className="text-lg font-semibold tracking-tight">
                     {title}
                   </h3>
-                  <p className="mt-2 max-w-[33ch] text-sm leading-6 text-muted-foreground">
-                    {description}
-                  </p>
+                  <p className="fleet-copy fleet-muted mt-2">{description}</p>
                 </li>
               ))}
             </ul>
@@ -217,87 +210,100 @@ export default function LandingPage() {
         <section
           id="operations"
           aria-labelledby="operations-heading"
-          className="border-y bg-muted/45"
+          className="dark fleet-dark-surface fleet-section"
         >
           <div className={frame}>
-            <div className="grid items-center gap-9 py-16 sm:py-24 lg:grid-cols-[6fr_5fr] lg:gap-16">
-              <div className="lg:col-start-2">
+            <div className="fleet-split items-center">
+              <div className="min-w-0">
                 <h2 id="operations-heading" className={sectionHeading}>
                   Plan trips with the fleet in view.
                 </h2>
-                <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">
+                <p className="fleet-copy fleet-muted mt-4">
                   Give dispatchers the context they need to plan each trip, from
                   booking details to the vehicle and crew assigned to it.
                 </p>
-                <dl className="mt-8 space-y-5 border-l-2 border-primary pl-5">
-                  <div>
-                    <dt className="font-semibold">Before dispatch</dt>
-                    <dd className="mt-1 text-sm leading-6 text-muted-foreground">
+                <dl className="mt-8 divide-y">
+                  <div className="pb-5">
+                    <dt className="text-base font-medium">Before dispatch</dt>
+                    <dd className="fleet-copy fleet-muted mt-2">
                       Review pickup and delivery details, crew assignments, and
                       vehicle records.
                     </dd>
                   </div>
-                  <div>
-                    <dt className="font-semibold">After the trip</dt>
-                    <dd className="mt-1 text-sm leading-6 text-muted-foreground">
+                  <div className="pt-5">
+                    <dt className="text-base font-medium">After the trip</dt>
+                    <dd className="fleet-copy fleet-muted mt-2">
                       Refer to completed trips, fares, fuel logs, and service
                       history when reviewing fleet performance.
                     </dd>
                   </div>
                 </dl>
               </div>
-              <div className="lg:col-start-1 lg:row-start-1">
+              <div className="min-w-0">
                 <OperationsPreview />
               </div>
             </div>
           </div>
         </section>
 
-        {/* ------------- GETTING STARTED WITH FLEET ---------------- */}
-        <section
-          id="getting-started"
-          aria-labelledby="getting-started-heading"
-          className={frame}
-        >
-          <div className="py-16 sm:py-24">
-            <h2 id="getting-started-heading" className={sectionHeading}>
-              Getting started with Fleet
-            </h2>
-            <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
-              Fleet access is set up through your company administrator.
-            </p>
-            <ol className="mt-8 grid gap-x-8 gap-y-2 sm:grid-cols-3">
-              {onboarding.map(({ title, description }, index) => (
-                <li key={title} className="border-t py-5">
-                  <span
-                    aria-hidden="true"
-                    className="text-sm tabular-nums text-muted-foreground"
+        {/* ------------- GETTING STARTED + FAQ ---------------- */}
+        <div className="fleet-section">
+          <div className={`${frame} space-y-24 pb-5`}>
+            <section
+              id="getting-started"
+              aria-labelledby="getting-started-heading"
+              className="space-y-10 mb-42 py-10"
+            >
+              <div>
+                <h2 id="getting-started-heading" className={sectionHeading}>
+                  Getting started with Fleet
+                </h2>
+                <p className="fleet-copy fleet-muted mt-4">
+                  Fleet access is set up through your company administrator.
+                </p>
+              </div>
+              <ol className="grid gap-8 md:grid-cols-3">
+                {onboarding.map(({ title, description }, index) => (
+                  <li
+                    key={title}
+                    className="relative grid grid-cols-[auto_minmax(0,1fr)] content-start items-start gap-4 md:grid-cols-1"
                   >
-                    0{index + 1}
-                  </span>
-                  <h3 className="mt-3 text-lg font-semibold tracking-tight">
-                    {title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    {description}
-                  </p>
-                </li>
-              ))}
-            </ol>
+                    <span className="grid size-8 place-items-center rounded-full border text-sm font-medium tabular-nums">
+                      {index + 1}
+                    </span>
+                    {index < onboarding.length - 1 && (
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute top-10 -bottom-6 left-4 flex -translate-x-1/2 flex-col items-center text-primary md:top-4 md:-right-6 md:bottom-auto md:left-10 md:translate-x-0 md:-translate-y-1/2 md:flex-row"
+                      >
+                        <span className="w-0 flex-1 border-l-2 border-dashed border-current md:h-0 md:border-t-2 md:border-l-0" />
+                        <span className="size-0 border-x-4 border-t-6 border-x-transparent border-t-current md:border-y-4 md:border-r-0 md:border-l-6 md:border-y-transparent md:border-l-current" />
+                      </span>
+                    )}
+                    <div className="max-w-xl pt-0.5">
+                      <h3 className="text-lg font-semibold tracking-tight">
+                        {title}
+                      </h3>
+                      <p className="fleet-copy fleet-muted mt-2">
+                        {description}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+            <FleetFaq />
           </div>
-        </section>
-
-        {/* ------------- FAQ ---------------- */}
-        <FleetFaq />
+        </div>
 
         {/* ------------- FINAL CTA ---------------- */}
         <section
           aria-labelledby="access-heading"
-          className="dark text-foreground"
+          className="dark fleet-dark-surface fleet-access-panel relative isolate overflow-hidden border-y"
         >
-          <div className="fleet-access-panel relative overflow-hidden isolate border-y border-stone-600 bg-stone-900">
+          <div>
             <div
-              className={`${frame} grid items-center gap-8 px-6 pt-7 pb-16 sm:px-10 sm:pt-10 sm:pb-16 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12 lg:px-14`}
+              className={`${frame} grid items-center gap-8 pt-7 pb-16 sm:pt-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12`}
             >
               <div>
                 <h2
@@ -306,22 +312,21 @@ export default function LandingPage() {
                 >
                   Already have a Fleet account?
                 </h2>
-                <p className="mt-4 max-w-xl text-base leading-7 text-stone-300">
+                <p className="fleet-copy fleet-muted mt-4 max-w-xl">
                   Sign in with your company-issued credentials to access
                   bookings, vehicles, drivers, crews, and subscriptions.
                 </p>
               </div>
-              <div className="flex flex-col items-start gap-3 border-t border-stone-700 pt-7 lg:border-t-0 lg:border-l lg:py-5 lg:pl-12">
+              <div className="flex flex-col items-start gap-3 border-t pt-7 lg:border-t-0 lg:border-l lg:py-5 lg:pl-12">
                 <Link
                   href="/login"
                   className={buttonVariants({
-                    className:
-                      "h-11 bg-primary px-6 text-sm text-stone-950 hover:bg-primary/90",
+                    className: primaryButton,
                   })}
                 >
                   Sign in
                 </Link>
-                <p className="text-sm leading-6 text-stone-300">
+                <p className="text-sm leading-6 text-muted-foreground">
                   Need access? Contact your administrator.
                 </p>
               </div>
@@ -331,7 +336,7 @@ export default function LandingPage() {
       </main>
 
       {/* ------------- FOOTER ---------------- */}
-      <footer className="dark bg-stone-950 text-foreground">
+      <footer className="dark fleet-footer-surface">
         <div className={frame}>
           <div className="grid gap-9 py-12 sm:grid-cols-[1fr_auto] sm:gap-12 md:py-16">
             <div className="space-y-3">
@@ -342,9 +347,9 @@ export default function LandingPage() {
             </div>
             <div className="grid grid-cols-2 gap-x-8 sm:gap-x-10 lg:gap-x-16">
               <nav aria-labelledby="footer-platform">
-                <h2 id="footer-platform" className="mb-2 text-sm font-semibold">
+                <h3 id="footer-platform" className="mb-2 text-sm font-semibold">
                   Platform
-                </h2>
+                </h3>
                 <ul>
                   {footerPlatformLinks.map(({ href, label }) => (
                     <li key={href}>
@@ -359,12 +364,12 @@ export default function LandingPage() {
                 </ul>
               </nav>
               <nav aria-labelledby="footer-resources">
-                <h2
+                <h3
                   id="footer-resources"
                   className="mb-2 text-sm font-semibold"
                 >
                   Resources
-                </h2>
+                </h3>
                 <ul>
                   <li>
                     <a
@@ -401,6 +406,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 }

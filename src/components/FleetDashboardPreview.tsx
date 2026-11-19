@@ -14,12 +14,12 @@ export function FleetDashboardPreview({
 }: Readonly<{ decorative?: boolean; sizes?: string }>) {
   const alt = decorative ? "" : dashboardAlt;
   const surface = decorative
-    ? "bg-card"
-    : "bg-white/30 backdrop-blur-md dark:bg-white/10";
+    ? "max-w-240 border-white/65 bg-card shadow-lg shadow-black/10 dark:border-white/20"
+    : "fleet-preview-glass w-full";
   return (
     <figure
       aria-hidden={decorative || undefined}
-      className={`mx-auto max-w-240 rounded-xl border border-white/65 p-1.5 shadow-lg shadow-black/10 sm:rounded-2xl sm:p-2 dark:border-white/20 ${surface}`}
+      className={`mx-auto rounded-xl border p-1.5 sm:rounded-2xl sm:p-2 ${surface}`}
     >
       <Image
         {...dashboardImageProps}
