@@ -133,7 +133,7 @@ These are backend integration requirements; this frontend scope does not impleme
 
 When implementation is authorized:
 
-- Run the checks required by `AGENTS.md`. Use `pnpm lint`, not direct ESLint or Oxlint invocation for lint validation; retain any separately required configured checks.
+- Run the checks required by `AGENTS.md`. Use `pnpm lint` to run Oxlint.
 - Verify first-login and returning-user flows, refresh restoration, direct-route navigation, challenge expiry, and recovery-code handling.
 - Check mobile layouts and both themes.
 - Report failures honestly and distinguish existing tooling failures from introduced errors.

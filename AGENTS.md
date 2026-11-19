@@ -23,7 +23,7 @@
 
 - If a check shows a Windows executable path or an application-control blocking error, stop and tell the user. Do not work around it by changing dependencies or checks.
 - Windows Smart App Control blocks Oxlint's unsigned native binary on this machine. Its “Cannot find native binding” error alongside “An Application Control policy has blocked this file” means the command is running on Windows; run it in Ubuntu.
-- Never add OS-specific bindings such as `@oxlint/binding-win32-x64-msvc`, or edit `package.json` / `pnpm-lock.yaml` just to resolve tooling errors. Preserve Oxlint, `eslint-plugin-oxlint`, lint-staged, and Husky hooks.
+- Never add OS-specific bindings such as `@oxlint/binding-win32-x64-msvc`, or edit `package.json` / `pnpm-lock.yaml` just to resolve tooling errors. Preserve Oxlint, lint-staged, and Husky hooks.
 - Do not copy `node_modules` between Windows and Ubuntu. If dependencies are broken, remove the repository's `node_modules` and reinstall in Ubuntu with `pnpm install --frozen-lockfile`.
 - `/bin/sh^M: bad interpreter` indicates a Windows script or CRLF line endings; use Linux Node/pnpm and LF scripts. `wsl: command not found` inside Ubuntu is expected: `wsl` is a Windows command.
 
@@ -37,14 +37,14 @@
 
 ## Formatting
 
-- Follow `.prettierrc.json`, `.prettierignore`, and `.gitattributes`; use LF line endings, including in Husky hooks.
-- Format changed supported files with `pnpm exec prettier --write <paths>` and validate with `pnpm format:check`.
+- Follow `.oxfmtrc.json` and `.gitattributes`; use LF line endings, including in Husky hooks.
+- Format changed supported files with `pnpm exec oxfmt --write <paths>` and validate with `pnpm format:check`.
 - Use `pnpm format` for an explicitly requested repository-wide formatting pass. Avoid unrelated formatting churn during focused changes.
 - Do not disable formatting checks, add ignore patterns, or weaken rules merely to make validation pass.
 
 ## Git hooks and commits
 
-- Preserve the `prepare` script and Husky hooks. Pre-commit runs lint-staged: Oxlint, ESLint, and Prettier sequentially for staged JS/TS; Prettier only for staged JSON/CSS/Markdown/YAML. Never run whole-project lint, formatting, TypeScript, or builds in pre-commit.
+- Preserve the `prepare` script and Husky hooks. Pre-commit runs lint-staged: Oxlint and Oxfmt sequentially for staged JS/TS; Oxfmt only for staged JSON/CSS/Markdown/YAML. Never run whole-project lint, formatting, TypeScript, or builds in pre-commit.
 - Pre-push runs the project TypeScript check. Do not pass staged filenames to TypeScript; it must read the project configuration. Add the separate Electron project check only once Electron is configured.
 - Do not bypass hooks with `HUSKY=0`, `--no-verify`, or Git configuration changes during local commits. Fix the cause of hook failures in Ubuntu. The existing `HUSKY=0` setting in CI is intentional.
 - Inspect staged changes before committing. Respect partial staging and do not stage unrelated user changes unless asked to stage everything.
@@ -53,8 +53,8 @@
 
 ## Validation and CI
 
-- Use `pnpm lint` for lint validation, rather than invoking ESLint or Oxlint directly. Run `pnpm lint:ox` as the additional configured CI check.
-- For application or tooling changes, run `pnpm format:check`, `pnpm lint`, `pnpm lint:ox`, and `pnpm typecheck`. Run `pnpm build` before declaring changes ready for CI; documentation-only changes need formatting validation only.
+- Use `pnpm lint` to run Oxlint for lint validation.
+- For application or tooling changes, run `pnpm format:check`, `pnpm lint`, and `pnpm typecheck`. Run `pnpm build` before declaring changes ready for CI; documentation-only changes need formatting validation only.
 - Report any failing or skipped checks accurately. Distinguish existing failures from failures caused by the change; never claim remote CI passed based on local checks.
 - Preserve the CI `Checks` and `Build` jobs, read-only permissions, frozen pnpm installation, and checks on pull requests and pushes to `main` and `dev`.
 - Do not remove checks, suppress failures, add `continue-on-error`, or weaken branch protections to obtain a green result.

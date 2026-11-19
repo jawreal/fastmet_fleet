@@ -66,17 +66,16 @@ Build first, then start the production server. Open [Operations overview](http:/
 | `pnpm dev:custom`   | Start development on port 4000                   |
 | `pnpm build`        | Create a production build                        |
 | `pnpm start`        | Serve the production build                       |
-| `pnpm lint`         | Run the project ESLint checks                    |
-| `pnpm lint:ox`      | Run Oxlint checks                                |
+| `pnpm lint`         | Run Oxlint checks                                |
 | `pnpm typecheck`    | Check TypeScript using the project configuration |
-| `pnpm format`       | Format supported files across the repository     |
+| `pnpm format`       | Format supported files with Oxfmt                |
 | `pnpm format:check` | Check formatting without modifying files         |
 
 ## Git hooks and CI
 
 Dependency installation attempts to configure Husky automatically.
 
-- **Before committing:** lint-staged runs Oxlint, ESLint, and Prettier on staged source files, in that order. Staged JSON, CSS, Markdown, and YAML files run through Prettier only. Successful fixes are re-staged automatically.
+- **Before committing:** lint-staged runs Oxlint and Oxfmt on staged source files, in that order. Staged JSON, CSS, Markdown, and YAML files run through Oxfmt only. Successful fixes are re-staged automatically.
 - **Before pushing:** the hook runs the project TypeScript check. A failure blocks the push.
 - **In GitHub Actions:** the `Checks` and `Build` jobs validate formatting, linting, TypeScript, and production compilation for pull requests and pushes to `main` and `dev`.
 

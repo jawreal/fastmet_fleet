@@ -1,5 +1,9 @@
 {
+  "plugins": ["nextjs", "react", "jsx-a11y", "typescript", "unicorn", "oxc"],
   "categories": {
     "correctness": "warn"
+  },
+  "rules": {
+    "nextjs/no-img-element": "warn"
   }
 }
