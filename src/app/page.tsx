@@ -174,7 +174,7 @@ export default function LandingPage() {
         <section
           id="platform"
           aria-labelledby="platform-heading"
-          className="fleet-tint-surface fleet-section"
+          className="fleet-tint-surface fleet-night-surface fleet-section"
         >
           <div className={`${frame} fleet-split`}>
             <h2 id="platform-heading" className={sectionHeading}>
@@ -247,7 +247,7 @@ export default function LandingPage() {
         </section>
 
         {/* ------------- GETTING STARTED + FAQ ---------------- */}
-        <div className="fleet-section">
+        <div className="fleet-night-surface fleet-section">
           <div className={`${frame} space-y-24 pb-5`}>
             <section
               id="getting-started"
