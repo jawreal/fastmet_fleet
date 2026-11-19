@@ -8,7 +8,7 @@ import {
   ChartColumn,
 } from "lucide-react";
 import { Brand } from "@/components/auth/Brand";
-import { ThemeToggle } from "@/components/auth/ThemeToggle";
+import { FleetThemeMenu } from "@/components/FleetThemeMenu";
 import { FleetStripes } from "@/components/landing/FleetStripes";
 import { FleetFaq } from "@/components/landing/FleetFaq";
 import { FleetMobileNav } from "@/components/landing/FleetMobileNav";
@@ -133,7 +133,7 @@ export default function LandingPage() {
               ))}
             </nav>
             <div className="flex items-center justify-end gap-2 sm:gap-3 max-md:[&>button]:size-11">
-              <ThemeToggle />
+              <FleetThemeMenu />
               <div className="hidden md:block">
                 <SignInLink />
               </div>
