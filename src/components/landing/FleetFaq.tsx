@@ -35,7 +35,7 @@ const questions: Readonly<IQuestions>[] = [
 
 export function FleetFaq() {
   return (
-    <section id="faq" aria-labelledby="faq-heading" className="bg-muted/30">
+    <section id="faq" aria-labelledby="faq-heading">
       <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-16 lg:px-12">
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <div className="divide-y">

@@ -11,6 +11,35 @@
   pointer-events: none;
 }
 
+.fleet-access-panel::before,
+.fleet-access-panel::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.fleet-access-panel::before {
+  background: color-mix(in oklab, var(--primary) 24%, transparent);
+  clip-path: polygon(30% 100%, 100% 60%, 100% 100%);
+}
+
+.fleet-access-panel::after {
+  background: var(--primary);
+  clip-path: polygon(56% 100%, 100% 79%, 100% 86%, 68% 100%);
+}
+
+@media (max-width: 639px) {
+  .fleet-access-panel::before {
+    clip-path: polygon(15% 100%, 100% 87%, 100% 100%);
+  }
+
+  .fleet-access-panel::after {
+    clip-path: polygon(45% 100%, 100% 93%, 100% 96%, 68% 100%);
+  }
+}
+
 .fleet-showcase-art::before {
   background: color-mix(in oklab, var(--primary) 28%, var(--background));
   clip-path: polygon(0 72%, 100% 4%, 100% 44%, 0 100%);

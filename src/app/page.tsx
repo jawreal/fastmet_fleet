@@ -290,25 +290,40 @@ export default function LandingPage() {
         {/* ------------- FAQ ---------------- */}
         <FleetFaq />
 
-        {/* -------------ALREADY HAVE AN ACCOUNT ---------------- */}
-        <section aria-labelledby="access-heading" className="border-y bg-muted">
-          <div className={frame}>
-            <div className="grid items-center gap-7 border-l-4 border-primary py-10 pl-5 sm:grid-cols-[1fr_auto] sm:py-12 sm:pl-8">
+        {/* ------------- FINAL CTA ---------------- */}
+        <section
+          aria-labelledby="access-heading"
+          className="dark text-foreground"
+        >
+          <div className="fleet-access-panel relative overflow-hidden isolate border-y border-stone-600 bg-stone-900">
+            <div
+              className={`${frame} grid items-center gap-8 px-6 pt-7 pb-16 sm:px-10 sm:pt-10 sm:pb-16 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12 lg:px-14`}
+            >
               <div>
                 <h2
                   id="access-heading"
-                  className="text-2xl font-semibold tracking-tight"
+                  className="text-3xl/tight font-semibold tracking-tight text-balance"
                 >
                   Already have a Fleet account?
                 </h2>
-                <p className="mt-2 max-w-lg text-sm leading-6 text-foreground">
-                  Sign in with your company-issued credentials. This preview
-                  uses sample data and requires a connected deployment for live
-                  account access.
+                <p className="mt-4 max-w-xl text-base leading-7 text-stone-300">
+                  Sign in with your company-issued credentials to access
+                  bookings, vehicles, drivers, crews, and subscriptions.
                 </p>
               </div>
-              <div className="justify-self-end">
-                <SignInLink primary />
+              <div className="flex flex-col items-start gap-3 border-t border-stone-700 pt-7 lg:border-t-0 lg:border-l lg:py-5 lg:pl-12">
+                <Link
+                  href="/login"
+                  className={buttonVariants({
+                    className:
+                      "h-11 bg-primary px-6 text-sm text-stone-950 hover:bg-primary/90",
+                  })}
+                >
+                  Sign in
+                </Link>
+                <p className="text-sm leading-6 text-stone-300">
+                  Need access? Contact your administrator.
+                </p>
               </div>
             </div>
           </div>
