@@ -29,7 +29,7 @@
 
 ## Dependencies and runtime
 
-- Use Node.js 24 and the pnpm version declared in `package.json`.
+- Use the Node.js range and pnpm version declared in `package.json`. Node.js 24 is recommended for development and used in CI.
 - Use pnpm for dependency installation and project scripts. Do not introduce `package-lock.json`, `yarn.lock`, or another package manager.
 - Install existing dependencies with `pnpm install --frozen-lockfile`.
 - Include `pnpm-lock.yaml` whenever dependency changes require it. Never edit the lockfile manually or bypass frozen-lockfile failures in CI.

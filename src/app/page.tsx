@@ -114,7 +114,7 @@ export default function LandingPage() {
       </a>
 
       {/* ------------- NAVBAR ---------------- */}
-      <header className="sticky top-0 z-10 w-full border-b bg-background">
+      <header className="sticky top-0 z-10 w-full border-b bg-background opacity-90 backdrop-blur-sm">
         <div className={frame}>
           <div className="grid min-h-18 grid-cols-[1fr_auto] items-center gap-x-3 py-3 md:grid-cols-[1fr_auto_1fr]">
             <Brand />
@@ -356,7 +356,7 @@ export default function LandingPage() {
                 <Link
                   href="/login"
                   className={buttonVariants({
-                    className: primaryButton,
+                    className: `${primaryButton} w-full md:w-auto`,
                   })}
                 >
                   Sign in
