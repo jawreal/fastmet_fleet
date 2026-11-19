@@ -1,32 +1,9 @@
-import { ChevronDown } from "lucide-react";
-
-interface IAdvantage {
-  title: string;
-  description: string;
-}
+import { Minus, Plus } from "lucide-react";
 
 interface IQuestions {
   question: string;
   answer: string;
 }
-
-const advantages: Readonly<IAdvantage>[] = [
-  {
-    title: "FastMet drivers and direct bookings",
-    description:
-      "Coordinate drivers from the FastMet app alongside bookings you enter for your own customers.",
-  },
-  {
-    title: "Fuel and maintenance records by vehicle",
-    description:
-      "Review fill-ups, fuel economy, and service history to understand what it costs to run each vehicle.",
-  },
-  {
-    title: "A view of fleet expenses and earnings",
-    description:
-      "Review vehicle slot renewals, trip earnings, and operating expenses during your fleet’s business review.",
-  },
-];
 
 const questions: Readonly<IQuestions>[] = [
   {
@@ -58,57 +35,42 @@ const questions: Readonly<IQuestions>[] = [
 
 export function FleetFaq() {
   return (
-    <section
-      id="faq"
-      aria-labelledby="faq-heading"
-      className="border-t bg-muted/30"
-    >
-      <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[6fr_5fr] lg:gap-16 lg:px-12">
-        <div>
-          <h2
-            id="faq-heading"
-            className="text-3xl/tight font-semibold tracking-tight"
-          >
-            Frequently asked questions
-          </h2>
-          <div className="mt-6 divide-y">
+    <section id="faq" aria-labelledby="faq-heading" className="bg-muted/30">
+      <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-16 lg:px-12">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+          <div className="divide-y">
             {questions.map(({ question, answer }) => (
               <details key={question} className="group">
-                <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-sm py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+                <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-6 rounded-sm py-5 text-base leading-6 font-medium focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
                   {question}
-                  <ChevronDown
+                  <Plus
                     aria-hidden="true"
-                    className="size-4 shrink-0 text-muted-foreground group-open:rotate-180"
+                    className="size-4 shrink-0 text-muted-foreground group-open:hidden"
+                  />
+                  <Minus
+                    aria-hidden="true"
+                    className="hidden size-4 shrink-0 text-muted-foreground group-open:block"
                   />
                 </summary>
-                <p className="max-w-xl pb-4 text-sm leading-6 text-muted-foreground">
+                <p className="max-w-xl pr-8 pb-5 text-base leading-7 text-muted-foreground">
                   {answer}
                 </p>
               </details>
             ))}
           </div>
         </div>
-        <div aria-labelledby="advantages-heading">
+        <div className="row-start-1 min-w-0 lg:col-start-2 lg:pt-5">
           <h2
-            id="advantages-heading"
-            className="text-3xl/tight font-semibold tracking-tight text-balance sm:text-4xl/tight"
+            id="faq-heading"
+            className="text-3xl/tight font-semibold tracking-tight text-balance"
           >
-            Why FastMet Fleet?
+            Frequently asked questions
           </h2>
           <p className="mt-4 text-base leading-7 text-muted-foreground">
-            Coordinate trips with drivers from the FastMet app and keep the
-            records you need to understand what it costs to run your fleet.
+            Find answers about managing your fleet, coordinating drivers, and
+            recording deliveries. For account access, contact your company
+            administrator.
           </p>
-          <ul className="mt-6 space-y-4 border-l-2 border-primary pl-5">
-            {advantages.map(({ title, description }) => (
-              <li key={title}>
-                <h3 className="text-sm font-semibold">{title}</h3>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  {description}
-                </p>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
     </section>
