@@ -11,11 +11,7 @@ export function AuthFormSkeleton({
 }: Readonly<AuthFormSkeletonProps>) {
   return (
     <div className="w-full">
-      <p
-        id={preparingSetup ? undefined : "auth-heading"}
-        role="status"
-        className="sr-only"
-      >
+      <p id={preparingSetup ? undefined : "auth-heading"} className="sr-only">
         {preparingSetup
           ? "Preparing your setup code…"
           : "Restoring your sign-in step…"}

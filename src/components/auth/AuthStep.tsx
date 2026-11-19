@@ -13,6 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthFormSkeleton } from "./AuthFormSkeleton";
 
+interface IAuthStep {
+  expected: AuthState["status"];
+  children: (state: AuthState, run: RunAuthAction) => ReactNode;
+}
+
 export const demoNotice =
   "Development demo · synthetic data only. No real session is created.";
 
@@ -28,13 +33,7 @@ const loadingFieldCounts = {
   AUTHENTICATED: 0,
 } satisfies Record<AuthState["status"], 0 | 1 | 2>;
 
-export function AuthStep({
-  expected,
-  children,
-}: {
-  expected: AuthState["status"];
-  children: (state: AuthState, run: RunAuthAction) => ReactNode;
-}) {
+export function AuthStep({ expected, children }: Readonly<IAuthStep>) {
   const router = useRouter();
   const [state, setState] = useState<AuthState | null>(null);
   const [error, setError] = useState("");
@@ -119,8 +118,9 @@ export function AuthStep({
       </div>
     );
 
-  if (!state || state.status !== expected)
+  if (!state || state?.status !== expected) {
     return <AuthFormSkeleton fields={loadingFieldCounts[expected]} />;
+  }
 
   return (
     <div className="w-full space-y-5">

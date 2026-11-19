@@ -9,7 +9,12 @@ import {
   SubmitButton,
   useFormMessage,
 } from "./FormParts";
-function ChangePasswordForm({ run }: { run: RunAuthAction }) {
+
+interface IChangePasswordForm {
+  run: RunAuthAction;
+}
+
+function ChangePasswordForm({ run }: Readonly<IChangePasswordForm>) {
   const form = useForm<PasswordValues>({
     resolver: zodResolver(passwordSchema),
     defaultValues: { newPassword: "", confirmPassword: "" },

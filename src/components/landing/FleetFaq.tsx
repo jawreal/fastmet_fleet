@@ -71,8 +71,8 @@ export function FleetFaq() {
           >
             Frequently asked questions
           </h2>
-          <div className="mt-6 divide-y border-y">
-            {questions.map(({ question, answer }: IQuestions) => (
+          <div className="mt-6 divide-y">
+            {questions.map(({ question, answer }) => (
               <details key={question} className="group">
                 <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-sm py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
                   {question}

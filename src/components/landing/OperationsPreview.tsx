@@ -7,7 +7,7 @@ const operationsScreenshot = "";
 export function OperationsPreview() {
   return (
     <figure className="min-w-0">
-      <div className="relative grid aspect-[16/10] place-items-center overflow-hidden rounded-lg border bg-muted">
+      <div className="relative grid aspect-16/10 place-items-center overflow-hidden rounded-lg border bg-muted">
         {operationsScreenshot ? (
           <Image
             src={operationsScreenshot}

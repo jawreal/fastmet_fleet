@@ -211,8 +211,9 @@ export function WalletTransactions() {
               label: value === "All" ? "All transactions" : value,
             }))}
             onValueChange={(value) => {
-              if (value && filters.some((item) => item === value))
+              if (value && filters.includes(value as Filter)) {
                 setFilter(value as Filter);
+              }
             }}
           >
             <SelectTrigger

@@ -5,13 +5,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { AuthStep, type RunAuthAction } from "./AuthStep";
 import { StepHeader, SubmitButton, useCopy, useFormMessage } from "./FormParts";
-function RecoveryCodes({
-  codes,
-  run,
-}: {
+
+interface IRecoveryCodes {
   codes: readonly string[];
   run: RunAuthAction;
-}) {
+}
+
+function RecoveryCodes({ codes, run }: Readonly<IRecoveryCodes>) {
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const clipboard = useCopy();
@@ -71,9 +71,7 @@ function RecoveryCodes({
           Download
         </Button>
       </div>
-      <p role="status" className="text-xs text-muted-foreground">
-        {clipboard.feedback}
-      </p>
+      <p className="text-xs text-muted-foreground">{clipboard.feedback}</p>
       <p className="text-xs leading-5 text-muted-foreground">
         Store these somewhere private, such as a password manager. Anyone with
         these codes could use them to complete your sign-in.

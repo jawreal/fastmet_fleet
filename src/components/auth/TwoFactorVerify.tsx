@@ -15,7 +15,12 @@ import {
   SubmitButton,
   useFormMessage,
 } from "./FormParts";
-function VerifyForm({ run }: { run: RunAuthAction }) {
+
+interface IVerifyForm {
+  run: RunAuthAction;
+}
+
+function VerifyForm({ run }: Readonly<IVerifyForm>) {
   const [recovery, setRecovery] = useState(false);
   const form = useForm<CodeValues>({
     resolver: zodResolver(recovery ? recoverySchema : codeSchema),

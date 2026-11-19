@@ -7,15 +7,38 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
+interface IPasswordField {
+  id: string;
+  label: string;
+  registration: UseFormRegisterReturn;
+  error?: string;
+  busy: boolean;
+}
+
+interface ICodeField {
+  registration: UseFormRegisterReturn;
+  error?: string;
+  busy: boolean;
+  recovery?: boolean;
+}
+
+interface IStepHeader {
+  title: string;
+  description: string;
+  step?: string;
+}
+
+interface ISubmitButton {
+  busy: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+}
+
 export function StepHeader({
   title,
   description,
   step,
-}: {
-  title: string;
-  description: string;
-  step?: string;
-}) {
+}: Readonly<IStepHeader>) {
   return (
     <header className="space-y-2">
       {step && (
@@ -60,13 +83,7 @@ export function PasswordField({
   registration,
   error,
   busy,
-}: {
-  id: string;
-  label: string;
-  registration: UseFormRegisterReturn;
-  error?: string;
-  busy: boolean;
-}) {
+}: Readonly<IPasswordField>) {
   const [visible, setVisible] = useState(false);
   return (
     <Field className="gap-2" data-invalid={!!error}>
@@ -106,11 +123,7 @@ export function SubmitButton({
   busy,
   children,
   disabled,
-}: {
-  busy: boolean;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
+}: Readonly<ISubmitButton>) {
   return (
     <Button
       type="submit"
@@ -132,12 +145,7 @@ export function CodeField({
   error,
   busy,
   recovery,
-}: {
-  registration: UseFormRegisterReturn;
-  error?: string;
-  busy: boolean;
-  recovery?: boolean;
-}) {
+}: Readonly<ICodeField>) {
   return (
     <Field className="gap-2" data-invalid={!!error}>
       <FieldLabel htmlFor="code">
