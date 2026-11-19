@@ -10,7 +10,10 @@ import { TruckPerformanceReport } from "@/components/reports/TruckPerformanceRep
 import { DriverHelperReport } from "@/components/reports/DriverHelperReport";
 
 type ReportPeriod =
-  "Last 7 days" | "Last 30 days" | "This month" | "Last month";
+  | "Last 7 days"
+  | "Last 30 days"
+  | "This month"
+  | "Last month";
 
 interface ReportMetric {
   title: string;

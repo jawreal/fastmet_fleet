@@ -55,7 +55,7 @@ function VehicleFilePreview({
   if (file.mimeType.startsWith("image/")) {
     return (
       // Local file previews bypass Next's image optimizer.
-      // eslint-disable-next-line @next/next/no-img-element
+      // oxlint-disable-next-line nextjs/no-img-element
       <img
         src={file.url}
         alt={title}
@@ -132,7 +132,7 @@ export function VehicleFileUpload({
         <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
           {hasFile && isImage && !isUnavailable ? (
             // Local file previews need a regular image element rather than Next's image optimizer.
-            // eslint-disable-next-line @next/next/no-img-element
+            // oxlint-disable-next-line nextjs/no-img-element
             <img
               src={file!.url}
               alt=""
