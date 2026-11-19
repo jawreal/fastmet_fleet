@@ -35,8 +35,13 @@ const questions: Readonly<IQuestions>[] = [
 
 export function FleetFaq() {
   return (
-    <section id="faq" aria-labelledby="faq-heading" className="fleet-split">
-      <div className="min-w-0">
+    <section
+      id="faq"
+      aria-labelledby="faq-heading"
+      data-fleet-section=""
+      className="fleet-split"
+    >
+      <div data-fleet-motion="up" className="min-w-0">
         <h2 id="faq-heading" className="fleet-heading">
           Frequently asked questions
         </h2>
@@ -46,7 +51,7 @@ export function FleetFaq() {
           administrator.
         </p>
       </div>
-      <div className="min-w-0">
+      <div data-fleet-motion="up" className="min-w-0">
         <div className="divide-y">
           {questions.map(({ question, answer }) => (
             <details key={question} className="group">

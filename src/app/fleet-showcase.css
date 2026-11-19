@@ -62,6 +62,77 @@
   @apply py-16 md:py-24;
 }
 
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .fleet-landing {
+    --fleet-motion-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .fleet-hero-fade {
+    animation: fleet-hero-fade 1s var(--fleet-motion-ease);
+  }
+
+  #main:not([data-fleet-reveal="off"])
+    [data-fleet-section]:not([data-fleet-visible])
+    [data-fleet-motion]:not(:focus-within) {
+    opacity: 0;
+    transform: var(--fleet-motion-start, translateY(24px));
+  }
+
+  /* Fail open if the landing page JavaScript cannot initialize. */
+  #main:not([data-fleet-reveal]) [data-fleet-motion]:not(:focus-within) {
+    animation: fleet-motion-fallback 0s 1500ms forwards;
+  }
+
+  #main[data-fleet-reveal="ready"]
+    [data-fleet-visible]
+    [data-fleet-motion]:not(:focus-within) {
+    transition:
+      opacity 600ms var(--fleet-motion-ease),
+      transform 600ms var(--fleet-motion-ease);
+    transition-delay: var(--fleet-motion-delay, 0ms);
+  }
+
+  [data-fleet-motion="item"] {
+    --fleet-motion-start: translateY(16px);
+  }
+
+  [data-fleet-motion="item"]:nth-child(2) {
+    --fleet-motion-delay: 100ms;
+  }
+
+  [data-fleet-motion="item"]:nth-child(3) {
+    --fleet-motion-delay: 200ms;
+  }
+
+  [data-fleet-motion="image-right"] {
+    --fleet-motion-start: scale(0.95);
+  }
+
+  @media (min-width: 48rem) {
+    [data-fleet-motion="left"] {
+      --fleet-motion-start: translateX(-16px);
+    }
+
+    [data-fleet-motion="image-right"] {
+      --fleet-motion-start: translateX(16px) scale(0.95);
+    }
+  }
+}
+
+@keyframes fleet-hero-fade {
+  from {
+    opacity: 0.6;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes fleet-motion-fallback {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .fleet-landing section[id] {
   @apply scroll-mt-32 md:scroll-mt-24;
 }

@@ -11,6 +11,7 @@ import { Brand } from "@/components/auth/Brand";
 import { ThemeToggle } from "@/components/auth/ThemeToggle";
 import { FleetStripes } from "@/components/landing/FleetStripes";
 import { FleetFaq } from "@/components/landing/FleetFaq";
+import { FleetReveal } from "@/components/landing/FleetReveal";
 import { FleetDashboardPreview } from "@/components/FleetDashboardPreview";
 import { OperationsPreview } from "@/components/landing/OperationsPreview";
 import { buttonVariants } from "@/components/ui/button";
@@ -140,17 +141,18 @@ export default function LandingPage() {
 
       {/* ------------- HERO ---------------- */}
       <main id="main" tabIndex={-1}>
+        <FleetReveal rootId="main" />
         <section aria-labelledby="hero-heading" className="fleet-section">
           <div className={frame}>
             <div className="mx-auto max-w-4xl pb-12 text-center">
               <h1
                 id="hero-heading"
-                className="text-4xl/tight font-semibold tracking-tight text-balance sm:text-5xl/tight lg:text-6xl/tight"
+                className="fleet-hero-fade text-4xl/tight font-semibold tracking-tight text-balance sm:text-5xl/tight lg:text-6xl/tight"
               >
                 Run your fleet in{" "}
                 <span className="text-primary-foreground">one place.</span>
               </h1>
-              <p className="fleet-copy fleet-muted mx-auto mt-5 max-w-xl">
+              <p className="fleet-hero-fade fleet-copy fleet-muted mx-auto mt-5 max-w-xl">
                 FastMet Fleet gives dispatchers and fleet managers one place to
                 organize bookings, vehicles, crews, and operating costs.
               </p>
@@ -174,14 +176,22 @@ export default function LandingPage() {
         <section
           id="platform"
           aria-labelledby="platform-heading"
+          data-fleet-section=""
           className="fleet-tint-surface fleet-night-surface fleet-section"
         >
           <div className={`${frame} fleet-split`}>
-            <h2 id="platform-heading" className={sectionHeading}>
+            <h2
+              id="platform-heading"
+              data-fleet-motion="up"
+              className={sectionHeading}
+            >
               From the next booking to the{" "}
               <span className="text-primary-foreground">monthly review.</span>
             </h2>
-            <p className="fleet-copy fleet-muted max-w-xl">
+            <p
+              data-fleet-motion="up"
+              className="fleet-copy fleet-muted max-w-xl"
+            >
               Keep trip details, fleet records, and business reporting in the
               same workspace so your team can see how the pieces fit together.
             </p>
@@ -189,6 +199,7 @@ export default function LandingPage() {
               {capabilities.map(({ title, description, icon: Icon }) => (
                 <li
                   key={title}
+                  data-fleet-motion="item"
                   className="py-6 md:px-6 md:py-8 md:first:pl-0 md:last:pr-0"
                 >
                   <Icon
@@ -210,19 +221,27 @@ export default function LandingPage() {
         <section
           id="operations"
           aria-labelledby="operations-heading"
+          data-fleet-section=""
           className="dark fleet-dark-surface fleet-section"
         >
           <div className={frame}>
             <div className="fleet-split items-center">
               <div className="min-w-0">
-                <h2 id="operations-heading" className={sectionHeading}>
+                <h2
+                  id="operations-heading"
+                  data-fleet-motion="up"
+                  className={sectionHeading}
+                >
                   Plan trips with the fleet in view.
                 </h2>
-                <p className="fleet-copy fleet-muted mt-4">
+                <p
+                  data-fleet-motion="left"
+                  className="fleet-copy fleet-muted mt-4"
+                >
                   Give dispatchers the context they need to plan each trip, from
                   booking details to the vehicle and crew assigned to it.
                 </p>
-                <dl className="mt-8 divide-y">
+                <dl data-fleet-motion="left" className="mt-8 divide-y">
                   <div className="pb-5">
                     <dt className="text-base font-medium">Before dispatch</dt>
                     <dd className="fleet-copy fleet-muted mt-2">
@@ -239,7 +258,7 @@ export default function LandingPage() {
                   </div>
                 </dl>
               </div>
-              <div className="min-w-0">
+              <div data-fleet-motion="image-right" className="min-w-0">
                 <OperationsPreview />
               </div>
             </div>
@@ -252,9 +271,10 @@ export default function LandingPage() {
             <section
               id="getting-started"
               aria-labelledby="getting-started-heading"
+              data-fleet-section=""
               className="space-y-10 mb-42 py-10"
             >
-              <div>
+              <div data-fleet-motion="up">
                 <h2 id="getting-started-heading" className={sectionHeading}>
                   Getting started with Fleet
                 </h2>
@@ -266,6 +286,7 @@ export default function LandingPage() {
                 {onboarding.map(({ title, description }, index) => (
                   <li
                     key={title}
+                    data-fleet-motion="item"
                     className="relative grid grid-cols-[auto_minmax(0,1fr)] content-start items-start gap-4 md:grid-cols-1"
                   >
                     <span className="grid size-8 place-items-center rounded-full border text-sm font-medium tabular-nums">
@@ -299,13 +320,14 @@ export default function LandingPage() {
         {/* ------------- FINAL CTA ---------------- */}
         <section
           aria-labelledby="access-heading"
+          data-fleet-section=""
           className="dark fleet-dark-surface fleet-access-panel relative isolate overflow-hidden border-y"
         >
           <div>
             <div
               className={`${frame} grid items-center gap-8 pt-7 pb-16 sm:pt-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12`}
             >
-              <div>
+              <div data-fleet-motion="up">
                 <h2
                   id="access-heading"
                   className="text-3xl/tight font-semibold tracking-tight text-balance"
@@ -317,7 +339,10 @@ export default function LandingPage() {
                   bookings, vehicles, drivers, crews, and subscriptions.
                 </p>
               </div>
-              <div className="flex flex-col items-start gap-3 border-t pt-7 lg:border-t-0 lg:border-l lg:py-5 lg:pl-12">
+              <div
+                data-fleet-motion="up"
+                className="flex flex-col items-start gap-3 border-t pt-7 lg:border-t-0 lg:border-l lg:py-5 lg:pl-12"
+              >
                 <Link
                   href="/login"
                   className={buttonVariants({
