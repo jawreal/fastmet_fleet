@@ -2,11 +2,14 @@
   "name": "fastmet_fleet",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24.0.0 <27.0.0"
+  },
   "scripts": {
-    "dev": "next dev",
-    "dev:custom": "next dev -p 4001",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node scripts/check-node.mjs && next dev",
+    "dev:custom": "node scripts/check-node.mjs && next dev -p 4001",
+    "build": "node scripts/check-node.mjs && next build",
+    "start": "node scripts/check-node.mjs && next start",
     "lint": "oxlint",
     "typecheck": "next typegen && tsc --noEmit",
     "format": "oxfmt --write .",

@@ -5,7 +5,7 @@ Fleet management app built with Next.js App Router, TypeScript, and shadcn UI wi
 ## Requirements
 
 - WSL2 Ubuntu, using Linux bash and Linux Node/pnpm for all commands
-- Node.js 24
+- Node.js 24.0.0 or newer, below 27.0.0. Node.js 24 is recommended for development and used in CI.
 - pnpm 12.11.2 (the version declared in `package.json`)
 - Git, for cloning the repository and installing Git hooks
 
@@ -31,9 +31,14 @@ If a check shows a Windows executable path or an application-control blocking er
 From the repository directory:
 
 ```sh
+nvm install
+nvm use
+node --version
 pnpm install --frozen-lockfile
 pnpm dev
 ```
+
+With NVM installed, `nvm install` and `nvm use` read `.nvmrc` and select Node.js 24. Other supported Node versions can be selected explicitly. pnpm rejects unsupported versions through `engines.node` and `engineStrict`.
 
 Open [Operations overview](http://localhost:3000/operations/overview). The app currently has no `/` page, so use an application route rather than the root URL.
 
