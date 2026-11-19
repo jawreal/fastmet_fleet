@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { AuthShowcase } from "@/components/auth/AuthShowcase";
 import { Brand } from "@/components/auth/Brand";
-import { ThemeToggle } from "@/components/auth/ThemeToggle";
+import { FleetThemeMenu } from "@/components/FleetThemeMenu";
 
 const legalLink =
   "inline-flex min-h-10 items-center rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
@@ -18,7 +18,7 @@ export function AuthShell({ children }: Readonly<{ children: ReactNode }>) {
       </a>
       <header className="flex items-center justify-between gap-4 px-6 py-4 sm:px-10 lg:px-12">
         <Brand />
-        <ThemeToggle />
+        <FleetThemeMenu systemLabel="Device" />
       </header>
       <main className="grid flex-1 lg:grid-cols-2">
         <section

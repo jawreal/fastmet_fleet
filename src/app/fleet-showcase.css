@@ -58,6 +58,23 @@
   @apply mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.fleet-landing main section[id]:target) {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (width < 48rem) {
+  html:has(.fleet-landing [data-fleet-menu="open"]) {
+    overflow: hidden;
+  }
+
+  .fleet-landing:has([data-fleet-menu="open"])
+    > :is(main, footer, a[href="#main"]) {
+    visibility: hidden;
+  }
+}
+
 .fleet-section {
   @apply py-16 md:py-24;
 }

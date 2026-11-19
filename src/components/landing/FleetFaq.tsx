@@ -37,6 +37,7 @@ export function FleetFaq() {
   return (
     <section
       id="faq"
+      tabIndex={-1}
       aria-labelledby="faq-heading"
       data-fleet-section=""
       className="fleet-split"
