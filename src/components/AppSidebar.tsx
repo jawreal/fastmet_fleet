@@ -20,7 +20,7 @@ import { navigationLinks } from "@/lib/navLinks";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -31,10 +31,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <Image
                 src="/icon.png"
                 alt="FastMet icon"
+                className="shrink-0 group-data-[collapsible=icon]:size-5"
                 width={30}
                 height={30}
               />
-              <div>
+              <div className="group-data-[collapsible=icon]:hidden">
                 <span className="text-base font-semibold">FastMet</span>
                 <p className="text-muted-foreground uppercase text-xs font-mono">
                   fleet management

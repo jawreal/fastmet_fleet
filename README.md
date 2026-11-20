@@ -99,3 +99,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development rules and [AGENTS.md](AGE
 - **Formatting fails:** run `pnpm format`, review the changes, and stage the files you intend to commit.
 - **Type checking blocks a push:** run `pnpm typecheck`, fix the reported errors, and retry.
 - **Dependency installation fails in CI:** ensure `package.json` and `pnpm-lock.yaml` are both updated using `pnpm install` and included in the same change.
+
+## Requests sidebar preview
+
+The global request sidebar is UI-only. Use **Alt+Shift+Q** to toggle it. In
+development, append `?requests=0`, `2`, `7`, or `120` to a dashboard URL to preview
+the fixtures, and use `+ New` to simulate a silent arrival. See
+[the sidebar guide](docs/request-sidebar.md) for layout behavior, cookie
+persistence, callback boundaries, and the verification checklist.
