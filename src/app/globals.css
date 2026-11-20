@@ -393,3 +393,78 @@ body {
   grid-column: 3;
   grid-row: 1;
 }
+
+/* Per-type request counts sit above the tile edge, separate from its time-left ring. */
+.requests-type-count {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  min-width: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1px 3px;
+  background: var(--sidebar);
+  color: var(--foreground);
+  font-size: 9px;
+  line-height: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Use the same header measurements in the card and in its list connector. */
+.requests-card,
+.requests-list {
+  --request-card-padding: 0.625rem;
+  --request-card-heading-height: 1rem;
+}
+.requests-card {
+  padding: var(--request-card-padding);
+}
+.requests-card-heading {
+  min-height: var(--request-card-heading-height);
+  line-height: var(--request-card-heading-height);
+}
+.requests-list {
+  /* Retain a list style for screen readers that use it to detect list semantics. */
+  list-style-type: disc;
+}
+.requests-list-item::marker {
+  color: transparent;
+}
+.requests-list-item {
+  /* Row padding + card border + card padding + half the booking header. */
+  --request-elbow-y: calc(
+    0.5rem + 1px + var(--request-card-padding) +
+      var(--request-card-heading-height) / 2
+  );
+  --request-elbow-radius: 0.75rem;
+}
+.requests-card-trunk,
+.requests-card-elbow {
+  position: absolute;
+  left: 0.25rem;
+  pointer-events: none;
+  border-left: 1px solid
+    color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+}
+.requests-card-trunk {
+  inset-block: 0;
+}
+.requests-list-item:first-child > .requests-card-trunk {
+  /* Bridge the summary's bottom padding to keep the first segment continuous. */
+  top: -0.5rem;
+}
+.requests-list-item[data-last-visible="true"] > .requests-card-trunk {
+  /* End the last straight segment where its elbow takes over. */
+  bottom: calc(
+    100% - var(--request-elbow-y) + var(--request-elbow-radius) - 1px
+  );
+}
+.requests-card-elbow {
+  top: calc(var(--request-elbow-y) - var(--request-elbow-radius));
+  width: 1.25rem;
+  height: calc(var(--request-elbow-radius) + 1px);
+  border-bottom: 1px solid
+    color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+  /* The curve leaves an 8px horizontal tail to the card within the existing gutter. */
+  border-bottom-left-radius: var(--request-elbow-radius);
+}

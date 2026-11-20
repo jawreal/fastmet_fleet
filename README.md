@@ -102,8 +102,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development rules and [AGENTS.md](AGE
 
 ## Requests sidebar preview
 
-The global request sidebar is UI-only. Use **Alt+Shift+Q** to toggle it. In
-development, append `?requests=0`, `2`, `7`, or `120` to a dashboard URL to preview
-the fixtures, and use `+ New` to simulate a silent arrival. See
-[the sidebar guide](docs/request-sidebar.md) for layout behavior, cookie
-persistence, callback boundaries, and the verification checklist.
+The request sidebar shows matching mock requests under each active vehicle.
+Use **Alt+Shift+Q** to toggle it. In development, try
+`?scenario=same-type` to see shared requests, or `?scenario=stress` for a busy fleet.
+See [the sidebar guide](docs/request-sidebar.md) for all seven scenarios and the
+field mapping.

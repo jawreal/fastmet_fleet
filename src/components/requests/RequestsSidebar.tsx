@@ -14,11 +14,19 @@ import {
 } from "@/components/requests/RequestsPanel";
 import { useRequestsUI } from "@/components/requests/RequestsProvider";
 import { useRequestOverlay } from "@/hooks/use-request-overlay";
-import type { RequestSummary } from "@/lib/requestFixtures";
+import {
+  selectVehicleSections,
+  selectUniqueRequestCount,
+  vehicleTypeId,
+  type RequestSummary,
+  type RequestVehicleType,
+  type Vehicle,
+} from "@/lib/requestTypes";
 
 export type RequestsSidebarProps = {
   requests: RequestSummary[];
-  count: number;
+  vehicles: Vehicle[];
+  onGoOnDuty: (type: RequestVehicleType) => void;
   now: number | null;
   pulse?: number;
   onMakeOffer: (request: RequestSummary) => void;
@@ -31,7 +39,8 @@ export type RequestsSidebarProps = {
 // All request data and actions enter as props; this component only coordinates presentation.
 export function RequestsSidebar({
   requests,
-  count,
+  vehicles,
+  onGoOnDuty,
   now,
   pulse = 0,
   onMakeOffer,
@@ -47,10 +56,29 @@ export function RequestsSidebar({
   const panelRef = useRef<HTMLElement>(null);
   const previous = useRef(state);
   const open = state !== "collapsed";
-  // Sorting here is presentation order, independent from any future fulfillment rules.
-  const summaries = [...requests].sort(
-    (a, b) => Date.parse(a.expiresAt) - Date.parse(b.expiresAt),
+  // Both surfaces derive their totals from the same sections without storing a second count.
+  const sections = selectVehicleSections(vehicles, requests);
+  const count = selectUniqueRequestCount(sections);
+  const actionable = sections.filter((section) => section.requests.length > 0);
+
+  // Keep the off-duty nudge independent from matching copies and from the panel total.
+  const matchedIds = new Set(
+    actionable.flatMap((section) =>
+      section.requests.map((request) => request.id),
+    ),
   );
+  const waitingByType = new Map<
+    string,
+    { vehicleType: RequestVehicleType; count: number }
+  >();
+  for (const request of requests) {
+    if (matchedIds.has(request.id)) continue;
+    matchedIds.add(request.id);
+    const key = vehicleTypeId(request.vehicleType);
+    const waiting = waitingByType.get(key);
+    if (waiting) waiting.count += 1;
+    else waitingByType.set(key, { vehicleType: request.vehicleType, count: 1 });
+  }
   useEffect(() => {
     // The shared sheet handles trapping focus, Escape, background inertness and restoration.
     // Desktop uses ordinary aside focus so page content stays keyboard-accessible.
@@ -60,7 +88,9 @@ export function RequestsSidebar({
   }, [state, open, overlay]);
   const panelProps = {
     state,
-    requests: summaries,
+    sections,
+    waitingByType: [...waitingByType.values()],
+    onGoOnDuty,
     count,
     now,
     pulse,
@@ -78,7 +108,7 @@ export function RequestsSidebar({
   };
   const rail = (
     <RequestsRail
-      requests={summaries}
+      sections={actionable}
       count={count}
       now={now}
       pulse={pulse}
@@ -127,7 +157,7 @@ export function RequestsSidebar({
       )}
       {/* Only count changes are announced; the ticking time-left labels never spam this region. */}
       <output aria-live="polite" aria-atomic="true" className="sr-only">
-        {count} matching request{count === 1 ? "" : "s"}
+        {count} actionable request{count === 1 ? "" : "s"}
       </output>
     </div>
   );

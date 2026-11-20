@@ -1,6 +1,6 @@
 "use client";
 
-import { HelpCircleIcon, InboxIcon, PanelRightCloseIcon } from "lucide-react";
+import { HelpCircleIcon, PanelRightCloseIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -8,14 +8,22 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { RequestDetails } from "@/components/requests/RequestDetails";
-import type { RequestSummary } from "@/lib/requestFixtures";
+import { RequestsEmptyState } from "@/components/requests/RequestsEmptyState";
+import { VehicleSection } from "@/components/requests/VehicleSection";
+import {
+  vehicleTypeId,
+  type RequestSummary,
+  type RequestVehicleType,
+  type VehicleSection as Section,
+} from "@/lib/requestTypes";
 import type { RequestsState } from "@/lib/request-ui";
 
 export type RequestsTab = "open" | "offers";
 export type RequestsPanelProps = {
   state: RequestsState;
-  requests: RequestSummary[];
+  sections: Section[];
+  waitingByType: { vehicleType: RequestVehicleType; count: number }[];
+  onGoOnDuty: (type: RequestVehicleType) => void;
   count: number;
   now: number | null;
   pulse: number;
@@ -31,7 +39,9 @@ export type RequestsPanelProps = {
 
 export function RequestsPanel({
   state,
-  requests,
+  sections,
+  waitingByType,
+  onGoOnDuty,
   count,
   now,
   pulse,
@@ -54,7 +64,7 @@ export function RequestsPanel({
     >
       <div className="requests-header">
         <h2 className="text-sm font-semibold">Requests</h2>
-        {/* The count never comes from the ten visible cards; it is an independent prop. */}
+        {/* Use the distinct request total shared with the rail and footer. */}
         {count > 0 && (
           <span
             key={pulse}
@@ -133,41 +143,50 @@ export function RequestsPanel({
             className="requests-scroll"
             tabIndex={0}
           >
-            {tab === "offers" || count === 0 ? (
-              <div className="flex min-h-52 flex-col items-center justify-center gap-3 text-center">
-                <InboxIcon
-                  aria-hidden="true"
-                  className="size-7 text-muted-foreground/40"
-                />
-                <p className="text-sm font-medium">
-                  {tab === "offers" ? "No offers sent" : "No matching requests"}
-                </p>
-                <p className="text-xs text-muted-foreground max-w-56">
-                  {tab === "offers"
-                    ? "Requests you make an offer on will appear here."
-                    : "New matching requests will appear here when available."}
-                </p>
-              </div>
+            {tab === "offers" ? (
+              <RequestsEmptyState offers />
             ) : (
-              <div className="space-y-3">
-                {requests.slice(0, 10).map((request) => (
-                  <article
-                    key={request.id}
-                    className="rounded-lg border border-border bg-background p-3"
+              <div className="space-y-4">
+                {count === 0 && <RequestsEmptyState />}
+                {/* The final vehicle has no divider, even when a waiting notice follows it. */}
+                {sections.length > 0 && (
+                  <div className="space-y-3">
+                    {sections.map((section) => (
+                      <VehicleSection
+                        key={section.vehicle.plate}
+                        section={section}
+                        now={now}
+                        onMakeOffer={onMakeOffer}
+                      />
+                    ))}
+                  </div>
+                )}
+                {/* Each notice counts only requests with no active vehicle of their type. */}
+                {waitingByType.map(({ vehicleType, count: waiting }) => (
+                  <div
+                    key={vehicleTypeId(vehicleType)}
+                    className="space-y-2 rounded-md bg-muted/40 p-3"
                   >
-                    <RequestDetails
-                      request={request}
-                      now={now}
-                      onMakeOffer={onMakeOffer}
-                    />
-                  </article>
+                    <p className="text-xs font-medium">{vehicleType.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Off duty · {waiting} request{waiting === 1 ? "" : "s"}{" "}
+                      waiting
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => onGoOnDuty(vehicleType)}
+                    >
+                      Go on duty
+                    </Button>
+                  </div>
                 ))}
               </div>
             )}
           </div>
           <div className="border-t border-border p-3">
             <Button className="w-full" variant="outline" onClick={onViewAll}>
-              View all{count > 0 ? ` ${count} requests` : " requests"}
+              View all {count} request{count === 1 ? "" : "s"}
             </Button>
           </div>
         </>

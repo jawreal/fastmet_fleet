@@ -1,89 +1,90 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { RequestsSidebar } from "@/components/requests/RequestsSidebar";
 import { useRequestsUI } from "@/components/requests/RequestsProvider";
 import {
-  fixtureCounts,
-  fixtureEpoch,
   getRequestFixture,
   getSimulatedRequest,
-  type FixtureCount,
+  scenarios,
+  type RequestScenario,
 } from "@/lib/requestFixtures";
 
-// No-op callback boundary: real offer/composer behavior is deliberately outside this UI phase.
 const noop = () => {};
-
+// Only development mounts the query reader; production has no scenario override or simulation UI.
 export function RequestsPreview() {
+  if (process.env.NODE_ENV === "development")
+    return (
+      <Suspense fallback={null}>
+        <ScenarioPreview />
+      </Suspense>
+    );
+  return <PreviewData scenario="mixed" />;
+}
+function ScenarioPreview() {
+  const params = useSearchParams();
+  const value = params.get("scenario");
+  // Start with the same three-vehicle fixture as production unless a scenario is selected.
+  const scenario = scenarios.includes(value as RequestScenario)
+    ? (value as RequestScenario)
+    : "mixed";
+  // Key only the fixture boundary: root context keeps cookie/layout state across scenario changes.
+  return <PreviewData key={scenario} scenario={scenario} />;
+}
+function PreviewData({ scenario }: Readonly<{ scenario: RequestScenario }>) {
   const { setState } = useRequestsUI();
-  const pathname = usePathname();
-  const [requests, setRequests] = useState(() => getRequestFixture(7));
-  const [count, setCount] = useState(7);
+  const [fixture, setFixture] = useState(() => getRequestFixture(scenario));
   const [now, setNow] = useState<number | null>(null);
   const [pulse, setPulse] = useState(0);
-  const epoch = useRef(fixtureEpoch);
-  const selectedCount = useRef<FixtureCount>(7);
   const sequence = useRef(0);
   const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    // Initialize clocks only after mount. The server and first hydration render stay neutral.
-    epoch.current = Date.now();
-    // Strict Mode replays mount effects; retain the query-selected fixture on replay.
-    setRequests(getRequestFixture(selectedCount.current, epoch.current));
-    setNow(Date.now());
+    // Server clocks remain neutral. Strict Mode can safely replay this same scenario initialization.
+    const frame = requestAnimationFrame(() => {
+      setFixture(getRequestFixture(scenario, Date.now()));
+      setNow(Date.now());
+    });
     const timer = setInterval(() => setNow(Date.now()), 15_000);
     return () => {
+      cancelAnimationFrame(frame);
       clearInterval(timer);
       if (pulseTimer.current) clearTimeout(pulseTimer.current);
     };
-  }, []);
-  useEffect(() => {
-    // This whole query-parameter branch is eliminated by production compilation.
-    if (process.env.NODE_ENV !== "development") return;
-    const applyFixture = () => {
-      const value = new URLSearchParams(window.location.search).get("requests");
-      const parsed = Number(value);
-      const next =
-        value !== null && fixtureCounts.includes(parsed as FixtureCount)
-          ? (parsed as FixtureCount)
-          : 7;
-      // Navigation with the same fixture retains a simulated arrival and its original expiry.
-      if (next === selectedCount.current) return;
-      selectedCount.current = next;
-      setRequests(getRequestFixture(next, epoch.current));
-      setCount(next);
-    };
-    applyFixture();
-    window.addEventListener("popstate", applyFixture);
-    return () => window.removeEventListener("popstate", applyFixture);
-  }, [pathname]);
+  }, [scenario]);
   return (
     <RequestsSidebar
-      requests={requests}
-      count={count}
+      requests={fixture.requests}
+      vehicles={fixture.vehicles}
       now={now}
       pulse={pulse}
       onMakeOffer={noop}
       onTabChange={noop}
       onHowItWorks={noop}
+      onGoOnDuty={noop}
       onViewAll={() => setState("expanded")}
       onSimulate={
         process.env.NODE_ENV === "development"
           ? () => {
-              // Feedback changes only fixture data/count. It never touches pinned/collapsed state.
               sequence.current += 1;
-              setRequests((current) => [
-                getSimulatedRequest(Date.now(), sequence.current),
+              // Add a request for an existing preview type; never create vehicles or change their duty.
+              const vehicleType =
+                fixture.requests[0]?.vehicleType ??
+                fixture.vehicles[0]?.vehicleType;
+              setFixture((current) => ({
                 ...current,
-              ]);
-              setCount((current) => current + 1);
+                requests: [
+                  getSimulatedRequest(
+                    Date.now(),
+                    sequence.current,
+                    vehicleType,
+                  ),
+                  ...current.requests,
+                ],
+              }));
               setPulse(sequence.current);
-              // One stable toast ID coalesces repeated clicks, with no sound or connection involved.
-              toast("1 new matching request", {
-                id: "request-preview-arrival",
-              });
+              toast("1 new request", { id: "request-preview-arrival" });
               if (pulseTimer.current) clearTimeout(pulseTimer.current);
               pulseTimer.current = setTimeout(() => setPulse(0), 2200);
             }

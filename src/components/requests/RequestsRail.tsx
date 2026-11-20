@@ -10,11 +10,15 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { RequestDetails, timeLeft } from "@/components/requests/RequestDetails";
-import type { RequestSummary } from "@/lib/requestFixtures";
+import { RequestCard, timeLeft } from "@/components/requests/RequestCard";
+import {
+  vehicleTypeLabel,
+  type RequestSummary,
+  type VehicleSection,
+} from "@/lib/requestTypes";
 
 interface IRequestsRail {
-  requests: RequestSummary[];
+  sections: VehicleSection[];
   count: number;
   now: number | null;
   pulse: number;
@@ -25,13 +29,14 @@ interface IRequestsRail {
 }
 
 interface IVehicleTile {
-  request: RequestSummary;
+  section: VehicleSection;
+  pulse: number;
   now: number | null;
   onMakeOffer: (request: RequestSummary) => void;
 }
 
 export function RequestsRail({
-  requests,
+  sections,
   count,
   now,
   pulse,
@@ -40,11 +45,11 @@ export function RequestsRail({
   onMakeOffer,
   onSimulate,
 }: Readonly<IRequestsRail>) {
-  // Count is supplied separately; it will remain authoritative when real summaries replace fixtures.
-  const remaining = Math.max(0, count - Math.min(requests.length, 3));
+  // The overflow chip counts hidden vehicle sections. The header badge counts distinct requests.
+  const remaining = Math.max(0, sections.length - 3);
   return (
     <div className="requests-rail">
-      <div className="requests-header">
+      <div className="requests-header relative">
         <Button
           ref={triggerRef}
           size="icon-sm"
@@ -58,20 +63,30 @@ export function RequestsRail({
         >
           <PanelRightOpenIcon />
         </Button>
+        {count > 0 && (
+          <span
+            key={pulse}
+            aria-label={`${count} unique request${count === 1 ? "" : "s"}`}
+            className={`pointer-events-none absolute top-1 right-1 rounded-full bg-muted px-1 text-[9px] tabular-nums ${pulse ? "requests-pulse" : ""}`}
+          >
+            {count}
+          </span>
+        )}
       </div>
       {count === 0 ? (
         <InboxIcon
-          aria-label="No matching requests"
+          aria-label="No actionable requests"
           className="size-5 text-muted-foreground/40"
         />
       ) : (
-        requests
+        sections
           .slice(0, 3)
-          .map((request) => (
+          .map((section) => (
             <VehicleTile
-              key={request.id}
-              request={request}
+              key={section.vehicle.plate}
+              section={section}
               now={now}
+              pulse={pulse}
               onMakeOffer={onMakeOffer}
             />
           ))
@@ -82,20 +97,10 @@ export function RequestsRail({
           type="button"
           className={`requests-count ${pulse ? "requests-pulse" : ""}`}
           onClick={onToggle}
-          aria-label={`${remaining} more matching requests`}
+          aria-label={`${remaining} more vehicles with requests`}
         >
           {remaining > 99 ? "99+" : `+${remaining}`}
         </button>
-      )}
-      {/* With only one to three requests, an arrival pulses a small count rather than inventing overflow. */}
-      {count > 0 && remaining === 0 && pulse > 0 && (
-        <span
-          key={pulse}
-          className="requests-count requests-pulse"
-          aria-hidden="true"
-        >
-          {count}
-        </span>
       )}
       {onSimulate && (
         <Button
@@ -112,7 +117,20 @@ export function RequestsRail({
   );
 }
 
-function VehicleTile({ request, now, onMakeOffer }: Readonly<IVehicleTile>) {
+function VehicleTile({
+  section,
+  now,
+  pulse,
+  onMakeOffer,
+}: Readonly<IVehicleTile>) {
+  // The selector orders requests by expiry so the first card drives the ring and flyout.
+  const { vehicle } = section;
+  const description = vehicle.model || vehicle.vehicleType.name;
+  const driver = vehicle.driver
+    ? `Driver: ${vehicle.driver.name}`
+    : "No driver assigned";
+  const count = section.requests.length;
+  const request = section.requests[0];
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const triggerId = useId();
@@ -142,7 +160,7 @@ function VehicleTile({ request, now, onMakeOffer }: Readonly<IVehicleTile>) {
         delay={180}
         closeDelay={200}
         className="requests-tile"
-        aria-label={`${request.vehicleName}, ${timeLeft(request, now)}, open request`}
+        aria-label={`${description}, ${vehicle.plate}, ${driver}, ${count} ongoing request${count === 1 ? "" : "s"}, soonest expiry: ${timeLeft(request, now)}, open requests`}
         onFocus={() => {
           // Escape restores focus without immediately reopening the same flyout.
           if (restoringFocus.current) {
@@ -174,7 +192,14 @@ function VehicleTile({ request, now, onMakeOffer }: Readonly<IVehicleTile>) {
             strokeDasharray={`${fraction * 100} 100`}
           />
         </svg>
-        {request.vehicleCode}
+        {vehicleTypeLabel(vehicle.vehicleType)}
+        <span
+          key={pulse}
+          className={`requests-type-count ${pulse ? "requests-pulse" : ""}`}
+          aria-hidden="true"
+        >
+          {count}
+        </span>
       </PopoverTrigger>
       <PopoverContent
         side="left"
@@ -188,7 +213,12 @@ function VehicleTile({ request, now, onMakeOffer }: Readonly<IVehicleTile>) {
         <PopoverDescription className="sr-only">
           Vehicle, route, pickup time and customer price.
         </PopoverDescription>
-        <RequestDetails request={request} now={now} onMakeOffer={onMakeOffer} />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">{description}</p>
+          <p className="text-xs text-muted-foreground">{vehicle.plate}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{driver}</p>
+        </div>
+        <RequestCard request={request} now={now} onMakeOffer={onMakeOffer} />
       </PopoverContent>
     </Popover>
   );
