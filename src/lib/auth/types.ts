@@ -1,7 +1,11 @@
 import type { LoginValues } from "./login";
 
 export type AuthState =
-  | { status: "SIGNED_OUT"; nextAction: "login"; reason?: "CHALLENGE_EXPIRED" }
+  | {
+      status: "SIGNED_OUT";
+      nextAction: "login";
+      reason?: "CHALLENGE_EXPIRED" | "SESSION_EXPIRED";
+    }
   | {
       status: "PASSWORD_CHANGE_REQUIRED";
       nextAction: "changePassword";
@@ -23,7 +27,12 @@ export type AuthState =
       expiresAt: number;
       recoveryCodes: readonly string[];
     }
-  | { status: "AUTHENTICATED"; nextAction: "continue" };
+  | {
+      status: "AUTHENTICATED";
+      nextAction: "continue";
+      expiresAt: number;
+      sessionMode: "browser" | "seven_days";
+    };
 
 export interface TwoFactorSetup {
   state: Extract<AuthState, { status: "TWO_FACTOR_SETUP_REQUIRED" }>;

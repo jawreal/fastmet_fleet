@@ -9,10 +9,13 @@ export function LoginStep() {
       {(state, run) => (
         <>
           {state.status === "SIGNED_OUT" &&
-            state.reason === "CHALLENGE_EXPIRED" && (
+            (state.reason === "CHALLENGE_EXPIRED" ||
+              state.reason === "SESSION_EXPIRED") && (
               <Alert role="alert">
                 <AlertDescription>
-                  Your sign-in attempt expired. Sign in again to continue.
+                  {state.reason === "SESSION_EXPIRED"
+                    ? "Your session expired. Sign in again with your password and authenticator code."
+                    : "Your sign-in attempt expired. Sign in again to continue."}
                 </AlertDescription>
               </Alert>
             )}

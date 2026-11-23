@@ -140,3 +140,7 @@ When implementation is authorized:
 - Do not bypass Husky, commit, or push unless explicitly requested.
 
 Deliver working frontend pages and the development mock flow, typed adapters ready for backend integration, a short API-contract/mock-usage document, and a concise summary of files changed, checks run, and remaining backend work.
+
+## Updated session requirement
+
+The login checkbox is “Keep me signed in for 7 days”. Preserve this preference throughout onboarding and issue the full session only after all required steps succeed. A checked session lasts at most seven days from completion; unchecked sessions use a browser-session cookie with server-enforced maximum and idle limits. Expiry or logout requires password plus a current authenticator/recovery code. Scan the QR once at enrollment, not on every sign-in or session expiry. Authenticator reset requires authorized recovery, session revocation, and fresh enrollment. No Google developer configuration is required. Frontend previews remain synthetic; production cookies and enforcement belong to the backend integration.

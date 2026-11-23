@@ -48,9 +48,14 @@ export default function SetupRenderContent(
   return (
     <>
       <ol className="list-decimal space-y-2 pl-4 text-xs leading-5 text-muted-foreground">
-        <li>Open Google Authenticator and tap +.</li>
+        <li>Install or open Google Authenticator and tap +.</li>
         <li>Choose “Scan a QR code”, or “Enter a setup key”.</li>
       </ol>
+      <p className="text-xs leading-5 text-muted-foreground">
+        Scan once to add your FLEET account. Enter the six-digit code from the
+        app below to finish setup. Future sign-ins use a new app code; you do
+        not need to scan again unless your authenticator is reset.
+      </p>
 
       {props.setup.demo && (
         <p className="rounded-md border p-3 text-xs leading-5 text-muted-foreground">

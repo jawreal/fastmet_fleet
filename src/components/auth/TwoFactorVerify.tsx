@@ -35,7 +35,7 @@ function VerifyForm({ run }: Readonly<IVerifyForm>) {
         description={
           recovery
             ? "Enter one of the recovery codes you saved when setting up your account."
-            : "Open Google Authenticator and enter the code for your fleet account."
+            : "Open Google Authenticator and enter the current six-digit code for your FLEET account. No QR scan is needed."
         }
       />
       <form

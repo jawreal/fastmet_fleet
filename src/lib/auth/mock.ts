@@ -15,38 +15,47 @@ const DEMO_CODES = [
   "DEMO-1724-9503",
 ];
 
-const STORAGE_KEY = "fleet-auth-demo-v1";
+const STORAGE_KEY = "fleet-auth-demo-v2";
+const PERSISTENT_KEY = "fleet-auth-demo-remembered-v2";
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+// Preview policy only; the production backend must enforce session lifetimes.
+const BROWSER_SESSION_MS = 8 * 60 * 60 * 1000;
 type Step = AuthState["status"];
 type Snapshot = {
   status: Step;
   expiresAt: number;
   used: number[];
-  reason?: "CHALLENGE_EXPIRED";
+  reason?: "CHALLENGE_EXPIRED" | "SESSION_EXPIRED";
+  keepSignedIn: boolean;
 };
 
-const statuses: Step[] = [
+const statuses = [
   "SIGNED_OUT",
   "PASSWORD_CHANGE_REQUIRED",
   "TWO_FACTOR_SETUP_REQUIRED",
   "TWO_FACTOR_REQUIRED",
   "RECOVERY_CODES_REQUIRED",
   "AUTHENTICATED",
-];
+] satisfies Step[];
+
 let queue = Promise.resolve();
 
 function fresh(): Snapshot {
-  return { status: "SIGNED_OUT", expiresAt: 0, used: [] };
+  return { status: "SIGNED_OUT", expiresAt: 0, used: [], keepSignedIn: false };
 }
 
 function read(): Snapshot {
   try {
     const value = JSON.parse(
-      sessionStorage.getItem(STORAGE_KEY) ?? "null",
+      sessionStorage.getItem(STORAGE_KEY) ??
+        localStorage.getItem(PERSISTENT_KEY) ??
+        "null",
     ) as Snapshot | null;
     if (
       value &&
       statuses.includes(value.status) &&
       Number.isFinite(value.expiresAt) &&
+      typeof value.keepSignedIn === "boolean" &&
       Array.isArray(value.used) &&
       value.used.every(
         (i) => Number.isInteger(i) && i >= 0 && i < DEMO_CODES.length,
@@ -61,20 +70,25 @@ function read(): Snapshot {
 
 function save(value: Snapshot): void {
   // Only nonsecret demo navigation metadata and consumed fixture indices are saved.
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+  if (value.status === "AUTHENTICATED" && value.keepSignedIn) {
+    localStorage.setItem(PERSISTENT_KEY, JSON.stringify(value));
+    sessionStorage.removeItem(STORAGE_KEY);
+  } else {
+    localStorage.removeItem(PERSISTENT_KEY);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+  }
 }
 
 function current(): Snapshot {
   const value = read();
-  if (
-    value.status !== "SIGNED_OUT" &&
-    value.status !== "AUTHENTICATED" &&
-    value.expiresAt <= Date.now()
-  ) {
+  if (value.status !== "SIGNED_OUT" && value.expiresAt <= Date.now()) {
     const expired = {
       ...fresh(),
       used: value.used,
-      reason: "CHALLENGE_EXPIRED" as const,
+      reason:
+        value.status === "AUTHENTICATED"
+          ? ("SESSION_EXPIRED" as const)
+          : ("CHALLENGE_EXPIRED" as const),
     };
     save(expired);
     return expired;
@@ -90,7 +104,12 @@ function state(value: Snapshot): AuthState {
         reason: value.reason,
       };
     case "AUTHENTICATED":
-      return { status: value.status, nextAction: "continue" };
+      return {
+        status: value.status,
+        nextAction: "continue",
+        expiresAt: value.expiresAt,
+        sessionMode: value.keepSignedIn ? "seven_days" : "browser",
+      };
     case "PASSWORD_CHANGE_REQUIRED":
       return {
         status: value.status,
@@ -133,7 +152,16 @@ function requireStep(step: Step): Snapshot {
   return value;
 }
 function advance(value: Snapshot, status: Step): AuthState {
-  const next = { ...value, status };
+  const duration: number = value.keepSignedIn
+    ? SEVEN_DAYS_MS
+    : BROWSER_SESSION_MS;
+
+  const next = {
+    ...value,
+    status,
+    expiresAt:
+      status === "AUTHENTICATED" ? Date.now() + duration : value.expiresAt,
+  };
   save(next);
   return state(next);
 }
@@ -185,6 +213,7 @@ export const mockAuthAdapter: AuthAdapter = {
           Date.now() +
           (account === "expiry@demo.example" ? 15000 : 15 * 60 * 1000),
         used: previous.used,
+        keepSignedIn: values.keepSignedIn,
       };
       save(value);
       return state(value);

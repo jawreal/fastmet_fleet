@@ -198,7 +198,7 @@ export function LoginForm({
                   disabled={busy}
                 />
                 <FieldLabel htmlFor="keep-signed-in" className="font-normal">
-                  Keep me signed in
+                  Keep me signed in for 7 days
                 </FieldLabel>
               </Field>
             )}

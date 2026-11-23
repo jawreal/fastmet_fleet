@@ -21,7 +21,7 @@ Alternatively set `NEXT_PUBLIC_FLEET_AUTH_MOCK=true` in your local, untracked `.
 | `/two-factor/recovery-codes` | Save and acknowledge recovery codes                        |
 | `/operations/overview`       | Existing destination after the flow completes              |
 
-The localhost port is printed by Next.js (normally 3000). Keep demo inputs synthetic. Any password of at least eight characters is accepted by the mock; it is never retained or compared to a real account password. “Keep me signed in” has no effect in the mock.
+The localhost port is printed by Next.js (normally 3000). Keep demo inputs synthetic. Any password of at least eight characters is accepted by the mock; it is never retained or compared to a real account password. “Keep me signed in for 7 days” preserves synthetic authenticated metadata across browser restarts for a fixed seven days after MFA completes. Unchecked sessions use sessionStorage with an eight-hour maximum for preview only. Neither option bypasses password or MFA on a new sign-in.
 
 ## Review scenarios
 
@@ -32,18 +32,18 @@ The localhost port is printed by Next.js (normally 3000). Keep demo inputs synth
 - **Recovery:** on returning-user verification choose “Use a recovery code”. Use one of the saved demo codes, for example `DEMO-4821-7306`. It succeeds once; repeating it in the same tab after starting a new returning-user attempt fails. The mock tracks consumed fixture indices, not code values.
 - **Expired challenge:** use `expiry@demo.example`. Wait 15 seconds on any pending step. The page returns to login with an expiry explanation. Normal demo challenges last 15 minutes and step transitions do not extend them.
 - **Refresh and direct routes:** refresh at each pending step. It should restore the permitted step. Navigate directly to another authentication route; it should redirect to the permitted route. Fresh tabs without demo progress return to login.
-- **Reset:** clear this site's sessionStorage or start a fresh isolated browser context. This resets the synthetic flow and consumed fixture indices. This is a development preview mechanism, not a session.
+- **Reset:** clear this site's sessionStorage and localStorage or start a fresh isolated browser context. This resets the synthetic flow and consumed fixture indices. This is a development preview mechanism, not a session.
 - **Visuals:** review at a narrow mobile width and desktop width, toggle the theme, and tab through the controls. Try a mismatched password and submit incomplete codes to check error labels and focus.
 
 The QR and manual key are explicitly public **demo fixtures**, generated from one provisioning URI. A scanned Google Authenticator app generates time-dependent codes, but the mock intentionally accepts the fixed code `012345` instead. It does not implement TOTP verification or issue a session.
 
-Only synthetic step/expiry metadata and consumed fixture indices are stored in sessionStorage to allow refresh. Passwords, TOTP secrets, entered codes, and recovery codes are never logged or written to browser storage or URLs. Setup data and recovery-code response values are held in component memory. On refresh the demo adapter reconstructs its public fixtures; the real backend must securely retrieve pending enrollment material. Copy/download are explicit user actions to save the codes; nothing is downloaded automatically.
+Only synthetic step/expiry metadata, the sign-in preference, and consumed fixture indices are stored in sessionStorage to allow refresh. After successful authentication with the seven-day option, that synthetic snapshot moves to localStorage; logout or expiry removes it. These values are not real session credentials and provide no access protection. Passwords, TOTP secrets, entered codes, and recovery codes are never logged or written to browser storage or URLs. Setup data and recovery-code response values are held in component memory. On refresh the demo adapter reconstructs its public fixtures; the real backend must securely retrieve pending enrollment material. Copy/download are explicit user actions to save the codes; nothing is downloaded automatically.
 
 ## Typed integration boundary
 
 `src/lib/auth/types.ts` defines `AuthAdapter`, `AuthState`, setup material, error codes, and fixed route mapping. `src/lib/auth/adapter.ts` selects the explicit development adapter or the disconnected production adapter. `src/lib/auth/login.ts` preserves and extends the original typed login entry point. UI state/route restoration lives in `src/components/auth/AuthStep.tsx`; individual forms call adapter functions and follow the returned state rather than predicting success.
 
-Pending states include `expiresAt` (Unix epoch milliseconds) and a permitted `nextAction`. States are `SIGNED_OUT`, `PASSWORD_CHANGE_REQUIRED`, `TWO_FACTOR_SETUP_REQUIRED`, `TWO_FACTOR_REQUIRED`, `RECOVERY_CODES_REQUIRED`, and `AUTHENTICATED`. Returning-user verification permits the alternative `verifyRecoveryCode` action in the same challenge. Setup material is returned only for the setup step; recovery codes are returned only while acknowledgment is pending. Expired challenges restore `SIGNED_OUT` with `reason: CHALLENGE_EXPIRED`.
+Pending states include `expiresAt` (Unix epoch milliseconds) and a permitted `nextAction`. States are `SIGNED_OUT`, `PASSWORD_CHANGE_REQUIRED`, `TWO_FACTOR_SETUP_REQUIRED`, `TWO_FACTOR_REQUIRED`, `RECOVERY_CODES_REQUIRED`, and `AUTHENTICATED`. Authenticated state includes `expiresAt` and `sessionMode: "browser" | "seven_days"`; an expired session restores `SIGNED_OUT` with `reason: SESSION_EXPIRED`. Returning-user verification permits the alternative `verifyRecoveryCode` action in the same challenge. Setup material is returned only for the setup step; recovery codes are returned only while acknowledgment is pending. Expired challenges restore `SIGNED_OUT` with `reason: CHALLENGE_EXPIRED`.
 
 ## Proposed HTTP contract (not implemented)
 
@@ -73,3 +73,15 @@ Successful responses should match the discriminated union. Validate response bod
 - Send sensitive responses with `Cache-Control: no-store`. Do not expose challenge/setup/code payloads through URLs, shared caches, or telemetry.
 - Issue a full session only when every required step succeeds, including initial recovery-code acknowledgment; use secure cookie/session policies and implement logout/revocation.
 - Protect every fleet API and fleet company resource server-side. Existing dashboard UI routes and client guards alone provide no production access control.
+
+## Seven-day sessions and deployment configuration
+
+Google Authenticator requires no Google Cloud project, OAuth client, API key, or paid Google service. Users install the app and scan their unique provisioning QR once. Production issuer/account labels should identify `FastMet Fleet` and the user email. A fresh QR is only needed for enrollment or an authorized authenticator reset, not when a session expires.
+
+The backend must bind `keepSignedIn` to the pending sign-in challenge and preserve it through password change, enrollment, recovery acknowledgment, or returning-user MFA. Issue a session only after all required steps succeed. For checked sessions, use a persistent Secure, HttpOnly cookie and a server-side absolute expiry of 604800 seconds from authentication completion; refresh must not extend that deadline. For unchecked sessions, omit cookie Max-Age/Expires and enforce a server-side maximum (proposed: eight hours) and an agreed idle timeout. Browser session restoration can retain session cookies, so browser closure alone is not an expiry guarantee.
+
+An active session permits continued access without another code. After expiry or explicit logout, require password and an authenticator/recovery code again. This is not a separate trusted-device feature that skips MFA on future password logins. Revoke sessions after password reset, authenticator reset, account disablement, or company access revocation.
+
+Deployment needs a backend-only TOTP encryption key, session signing/credential secrets and revocable session storage, HTTPS cookie settings, API routing/credentialed origin configuration, database fields for enrollment/challenges/recovery hashes/sessions, and synchronized server time. Never expose secrets through NEXT_PUBLIC variables. Keep the existing mock disabled in production. The backend and main admin implementation remain separate work; the current frontend does not issue secure cookies or enforce dashboard authorization.
+
+Preview checks: complete first-login or returning-user MFA with the checkbox selected, then reopen `/login` in another tab to restore the synthetic authenticated state. Without the checkbox, a fresh isolated tab starts signed out (some browsers duplicate sessionStorage when duplicating tabs). To simulate expiry without waiting, change only the synthetic snapshot's `expiresAt` to a past timestamp in browser developer tools and revisit `/login`; the session-expired message should appear. Logout clears both preview stores. Never place real secrets or credentials in these stores.
