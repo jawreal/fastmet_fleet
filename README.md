@@ -2,6 +2,8 @@
 
 Fleet management app built with Next.js App Router, TypeScript, and shadcn UI with Mira styling. The app source lives in `src/`.
 
+See the [Fleet authentication guide](docs/authentication-api.md) for local setup, the development account seed, and authentication tests.
+
 ## Requirements
 
 - WSL2 Ubuntu, using Linux bash and Linux Node/pnpm for all commands

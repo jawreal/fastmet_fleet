@@ -1,8 +1,13 @@
 import { z } from "zod";
+import { passwordInput } from "./schemas";
 
-export const loginSchema = z.object({
-  email: z.email("Enter a valid work email address.").trim(),
-  password: z.string().min(8, "Password must contain at least 8 characters."),
+export const loginSchema = z.strictObject({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .pipe(z.email("Enter a valid work email address.").max(254)),
+  password: passwordInput,
   keepSignedIn: z.boolean(),
 });
 

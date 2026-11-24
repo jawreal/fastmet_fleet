@@ -38,12 +38,16 @@ export interface TwoFactorSetup {
   state: Extract<AuthState, { status: "TWO_FACTOR_SETUP_REQUIRED" }>;
   manualKey: string;
   provisioningUri: string;
-  demo: boolean;
 }
 
 export interface AuthAdapter {
   login(values: LoginValues): Promise<AuthState>;
   changePassword(values: {
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<AuthState>;
+  changeAccountPassword(values: {
+    currentPassword: string;
     newPassword: string;
     confirmPassword: string;
   }): Promise<AuthState>;
@@ -63,7 +67,10 @@ export class AuthError extends Error {
       | "CODE_EXPIRED"
       | "CHALLENGE_EXPIRED"
       | "STEP_UNAVAILABLE"
-      | "UNCONNECTED",
+      | "INVALID_CREDENTIALS"
+      | "INVALID_INPUT"
+      | "RATE_LIMITED"
+      | "UNAVAILABLE",
     message: string,
   ) {
     super(message);

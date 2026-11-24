@@ -27,7 +27,7 @@ function ChangePasswordForm({ run }: Readonly<IChangePasswordForm>) {
       <StepHeader
         step="Account setup · 1 of 3"
         title="Create your new password"
-        description="Replace your temporary password to secure your fleet account."
+        description="Replace your initial password to secure your fleet account."
       />
       <form
         noValidate

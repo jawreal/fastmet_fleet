@@ -1,18 +1,17 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState } from "react";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AlertCircle,
-  ArrowRight,
-  Eye,
-  EyeOff,
-  LoaderCircle,
-  LockKeyhole,
-} from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowRight, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
@@ -22,17 +21,16 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { loginSchema, submitLogin, type LoginValues } from "@/lib/auth/login";
+import { AuthAlert } from "./AuthAlert";
 
 interface LoginFormProps {
-  demoAccess?: ReactNode;
   onSubmit?: (values: LoginValues) => Promise<unknown>;
 }
 
 const textLink =
-  "inline-flex min-h-8 items-center rounded-sm text-xs font-normal text-muted-foreground underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
+  "inline-flex min-h-8 items-center rounded-sm text-xs font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current";
 
 export function LoginForm({
-  demoAccess,
   onSubmit = submitLogin,
 }: Readonly<LoginFormProps>) {
   const [showPassword, setShowPassword] = useState(false);
@@ -83,19 +81,6 @@ export function LoginForm({
         aria-busy={busy}
       >
         <FieldGroup className="gap-5">
-          {message && (
-            <Alert
-              ref={alertRef}
-              tabIndex={-1}
-              role="alert"
-              className="rounded-md focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              <AlertCircle aria-hidden="true" />
-              <AlertDescription className="text-foreground">
-                {message}
-              </AlertDescription>
-            </Alert>
-          )}
           <Controller
             name="email"
             control={form.control}
@@ -106,7 +91,8 @@ export function LoginForm({
                   {...field}
                   id="email"
                   type="email"
-                  autoComplete="email"
+                  autoComplete="username"
+                  required
                   autoCapitalize="none"
                   spellCheck={false}
                   placeholder="name@company.com"
@@ -149,6 +135,7 @@ export function LoginForm({
                     id="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
+                    required
                     placeholder="Enter your password"
                     disabled={busy}
                     aria-invalid={fieldState.invalid}
@@ -217,29 +204,51 @@ export function LoginForm({
             {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
             {!busy && <ArrowRight aria-hidden="true" className="size-4" />}
           </Button>
-          {demoAccess}
+          {message && <AuthAlert ref={alertRef}>{message}</AuthAlert>}
         </FieldGroup>
       </form>
-      <footer className="mt-7 space-y-6">
+      <footer className="mt-7 border-t pt-4">
         <p className="text-xs leading-5 text-muted-foreground">
-          Need access to FastMet Fleet?
-          <br />
-          <button
-            type="button"
-            className={textLink}
-            onClick={() =>
-              report(
-                "Account access is managed by your company administrator. Contact them for your credentials.",
-              )
-            }
+          Your account is managed by your fleet administrator.
+        </p>
+        <Popover>
+          <PopoverTrigger
+            className={`${textLink} max-w-full text-left font-bold text-foreground`}
           >
-            Contact your administrator
-          </button>
-        </p>
-        <p className="flex items-center gap-2 border-t pt-5 text-xs leading-5 text-foreground/85">
-          <LockKeyhole aria-hidden="true" className="size-3" />
-          Email and authenticator verification
-        </p>
+            Learn how to access your account.
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            side="top"
+            sideOffset={8}
+            className="w-72 max-w-[calc(100vw-2rem)] gap-3 p-3 motion-reduce:animate-none motion-reduce:duration-0"
+          >
+            <PopoverTitle className="text-xs font-semibold">
+              How sign-in works
+            </PopoverTitle>
+            <PopoverDescription className="text-xs leading-5">
+              Use your registered work email and password, then verify with
+              Google Authenticator.
+            </PopoverDescription>
+            <ol className="list-decimal space-y-2 pl-4 text-xs leading-5 text-muted-foreground">
+              <li>Sign in with the credentials provided to your company.</li>
+              <li>
+                On your first sign-in, follow the steps to set up your
+                authenticator and save your recovery codes.
+              </li>
+              <li>
+                For future sign-ins, enter a fresh authenticator code or an
+                unused recovery code.
+              </li>
+            </ol>
+            <p className="border-t pt-2 text-xs leading-5 text-muted-foreground">
+              Need credentials or a password reset?{" "}
+              <strong className="font-semibold text-foreground">
+                Contact your administrator.
+              </strong>
+            </p>
+          </PopoverContent>
+        </Popover>
       </footer>
     </div>
   );

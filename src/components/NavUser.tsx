@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
 import { useTheme } from "next-themes";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { getAuthAdapter } from "@/lib/auth/adapter";
 import {
   ChevronsUpDownIcon,
   LogOutIcon,
@@ -55,7 +56,6 @@ export function NavUser({ company }: Readonly<ICompany>) {
     .map((word) => word[0])
     .join("");
   const { isMobile } = useSidebar();
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
     subscribe,
@@ -63,7 +63,21 @@ export function NavUser({ company }: Readonly<ICompany>) {
     () => false,
   );
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  /* For logging out */
+  const onLogout = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setLoggingOut(true);
+    try {
+      await (await getAuthAdapter()).logout();
+      window.location.replace("/login");
+    } catch {
+      toast.error("Unable to sign out. Please try again.");
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <>
@@ -187,11 +201,8 @@ export function NavUser({ company }: Readonly<ICompany>) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => {
-                // Replace with the authentication provider's sign-out when connected.
-                setConfirmLogout(false);
-                router.replace("/");
-              }}
+              disabled={loggingOut}
+              onClick={onLogout}
             >
               <LogOutIcon />
               Log out

@@ -14,17 +14,20 @@ import { useRequestOverlay } from "@/hooks/use-request-overlay";
 import type { RequestsState } from "@/lib/request-ui";
 
 interface IDashboardShell {
+  company: { name: string; location: string };
   initialRequestsState: RequestsState;
   initialLeftOpen: boolean;
   children: ReactNode;
 }
 
 interface IDashboardGrid {
+  company: IDashboardShell["company"];
   initialLeftOpen: boolean;
   children: ReactNode;
 }
 
 export function DashboardShell({
+  company,
   initialRequestsState,
   initialLeftOpen,
   children,
@@ -32,7 +35,7 @@ export function DashboardShell({
   // Like route-group middleware, this provider wraps every dashboard page exactly once.
   return (
     <RequestsProvider initialState={initialRequestsState}>
-      <DashboardGrid initialLeftOpen={initialLeftOpen}>
+      <DashboardGrid company={company} initialLeftOpen={initialLeftOpen}>
         {children}
       </DashboardGrid>
     </RequestsProvider>
@@ -40,6 +43,7 @@ export function DashboardShell({
 }
 
 function DashboardGrid({
+  company,
   initialLeftOpen,
   children,
 }: Readonly<IDashboardGrid>) {
@@ -61,7 +65,7 @@ function DashboardGrid({
         } as CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset" company={company} />
       <div className="fleet-page">
         <SiteHeader />
         {children}

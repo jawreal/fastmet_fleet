@@ -18,7 +18,11 @@ import { navigationLinks } from "@/lib/navLinks";
 
 // border-t border-sidebar-border from sidebar footer
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type SidebarProps = React.ComponentProps<typeof Sidebar> & {
+  company: { name: string; location: string };
+};
+
+export function AppSidebar({ company, ...props }: Readonly<SidebarProps>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -51,12 +55,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ))}
       </SidebarContent>
       <SidebarFooter className="mx-2 px-0 pt-1">
-        <NavUser
-          company={{
-            name: "Bayani Trucking Services",
-            location: "Km 14 MacArthur Hwy, Malinta, Valenzuela City",
-          }}
-        />
+        <NavUser company={company} />
       </SidebarFooter>
     </Sidebar>
   );

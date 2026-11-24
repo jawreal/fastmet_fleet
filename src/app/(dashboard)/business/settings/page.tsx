@@ -1,10 +1,11 @@
+import { protectFleetPage } from "@/lib/auth/server/protectPage";
 import { AppShell } from "@/components/AppShell";
 import { CompanySettings } from "@/components/settings/CompanySettings";
 import { PasswordSettings } from "@/components/settings/PasswordSettings";
 import { FleetDataSettings } from "@/components/settings/FleetDataSettings";
 import { VehicleRatesSettings } from "@/components/settings/VehicleRatesSettings";
 
-export default function Page() {
+function Page() {
   return (
     <AppShell title="Settings">
       <div className="@container mx-auto flex w-full max-w-5xl flex-col gap-6">
@@ -53,3 +54,5 @@ export default function Page() {
     </AppShell>
   );
 }
+
+export default protectFleetPage(Page);

@@ -1,5 +1,8 @@
+import { protectFleetPage } from "@/lib/auth/server/protectPage";
 import { AppShell } from "@/components/AppShell";
 
-export default function Page() {
+function Page() {
   return <AppShell title="Live tracking" />;
 }
+
+export default protectFleetPage(Page);

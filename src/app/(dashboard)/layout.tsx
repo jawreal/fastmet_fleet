@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { cookies } from "next/headers";
+import { requireFleetCompany } from "@/lib/auth/server/dal";
 import { DashboardShell } from "@/components/DashboardShell";
 import { REQUESTS_COOKIE, readRequestsState } from "@/lib/request-ui";
 
@@ -20,9 +21,11 @@ export default function DashboardLayout({ children }: Readonly<ChildrenProps>) {
 
 async function CookieDashboard({ children }: Readonly<ChildrenProps>) {
   // Read both preferences before emitting shell HTML; hydration starts with these values.
+  const company = await requireFleetCompany();
   const cookieStore = await cookies();
   return (
     <DashboardShell
+      company={company}
       initialRequestsState={readRequestsState(
         cookieStore.get(REQUESTS_COOKIE)?.value,
       )}

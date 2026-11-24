@@ -1,5 +1,7 @@
 "use client";
 import { useState, type SubmitEvent } from "react";
+import { getAuthAdapter } from "@/lib/auth/adapter";
+import { settingsPasswordSchema } from "@/lib/auth/schemas";
 import {
   Card,
   CardHeader,
@@ -14,40 +16,34 @@ import { Label } from "@/components/ui/label";
 
 export function PasswordSettings() {
   const [showPasswords, setShowPasswords] = useState(false);
-  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  /*TAKE_NOTE: MOCK UP */
-  function changePassword(event: SubmitEvent<HTMLFormElement>) {
+  const [busy, setBusy] = useState(false);
+
+  async function changePassword(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
-    setNotice("");
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const current = data.get("currentPassword");
-    const next = data.get("newPassword");
-    const confirm = data.get("confirmPassword");
-    if (
-      typeof current !== "string" ||
-      typeof next !== "string" ||
-      typeof confirm !== "string"
-    )
-      return;
-    if (!/[A-Z]/.test(next) || !/[a-z]/.test(next) || !/\d/.test(next)) {
-      setError("Use uppercase and lowercase letters and a number.");
-      return;
-    }
-    if (next !== confirm) {
-      setError("New passwords do not match.");
-      return;
-    }
-    if (current === next) {
-      setError("Choose a password different from your current password.");
-      return;
-    }
-    form.reset();
-    setNotice(
-      "Preview validated. Your password has not changed; account authentication is not connected.",
+    if (busy) return;
+    const parsed = settingsPasswordSchema.safeParse(
+      Object.fromEntries(new FormData(event.currentTarget)),
     );
+    if (!parsed.success) {
+      setError(
+        parsed.error.issues[0]?.message || "Check the submitted passwords.",
+      );
+      return;
+    }
+    setError("");
+    setBusy(true);
+    try {
+      await (await getAuthAdapter()).changeAccountPassword(parsed.data);
+      window.location.replace("/login");
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to change the password.",
+      );
+      setBusy(false);
+    }
   }
   return (
     <Card className="@container min-w-0" aria-labelledby="password-heading">
@@ -117,11 +113,10 @@ export function PasswordSettings() {
               {error}
             </p>
           )}
-          {notice && <p className="text-xs text-muted-foreground">{notice}</p>}
         </CardContent>
         <CardFooter className="mt-auto justify-end border-t">
-          <Button type="submit" size="lg">
-            Update password
+          <Button type="submit" size="lg" disabled={busy}>
+            {busy ? "Updating…" : "Update password"}
           </Button>
         </CardFooter>
       </form>

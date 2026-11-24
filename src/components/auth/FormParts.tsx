@@ -2,10 +2,10 @@
 import { useCallback, useRef, useState } from "react";
 import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import type { UseFormRegisterReturn } from "react-hook-form";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { AuthAlert } from "./AuthAlert";
 
 interface IPasswordField {
   id: string;
@@ -64,16 +64,7 @@ export function useFormMessage() {
     requestAnimationFrame(() => ref.current?.focus());
   }, []);
 
-  const alert = message ? (
-    <Alert
-      ref={ref}
-      tabIndex={-1}
-      role="alert"
-      className="focus-visible:outline-2 focus-visible:outline-ring"
-    >
-      <AlertDescription>{message}</AlertDescription>
-    </Alert>
-  ) : null;
+  const alert = message ? <AuthAlert ref={ref}>{message}</AuthAlert> : null;
   return { report, clear: () => setMessage(""), alert };
 }
 
