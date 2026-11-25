@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { loginSchema } from "@/lib/auth/login";
+import { loginRequestSchema } from "@/lib/auth/login";
 import {
   codeSchema,
   passwordSchema,
@@ -119,7 +119,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 }
 
 const mutations = {
-  login: (input: unknown) => signIn(validate(loginSchema, input)),
+  login: (input: unknown) => signIn(validate(loginRequestSchema, input)),
   "change-password": (input: unknown) =>
     changeInitialPassword(validate(passwordSchema, input).newPassword),
   "account-password": (input: unknown) => {

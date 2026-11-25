@@ -51,6 +51,9 @@ async function connect() {
     const db = client.db();
     const sessions = db.collection<FleetSession>("fleetwebsessions");
     const attempts = db.collection<Attempt>("fleetwebauthattempts");
+    const turnstileUses = db.collection<{ _id: string; expiresAt: Date }>(
+      "fleetwebturnstileuses",
+    );
     await Promise.all([
       sessions.createIndexes([
         { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
@@ -58,11 +61,15 @@ async function connect() {
       attempts.createIndexes([
         { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
       ]),
+      turnstileUses.createIndexes([
+        { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
+      ]),
     ]);
     return {
       accounts: db.collection<FleetAccount>("fleetapplications"),
       sessions,
       attempts,
+      turnstileUses,
       authenticators: db.collection<FleetAuthenticator>(
         "fleetwebauthenticators",
       ),

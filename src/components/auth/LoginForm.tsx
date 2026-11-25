@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState, type SubmitEvent } from "react";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, Eye, EyeOff, LoaderCircle } from "lucide-react";
@@ -20,11 +20,17 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { loginSchema, submitLogin, type LoginValues } from "@/lib/auth/login";
+import {
+  loginSchema,
+  submitLogin,
+  type LoginRequest,
+  type LoginValues,
+} from "@/lib/auth/login";
 import { AuthAlert } from "./AuthAlert";
+import { TurnstileWidget, type TurnstileWidgetHandle } from "./TurnstileWidget";
 
 interface LoginFormProps {
-  onSubmit?: (values: LoginValues) => Promise<unknown>;
+  onSubmit?: (values: LoginRequest) => Promise<unknown>;
 }
 
 const textLink =
@@ -37,6 +43,13 @@ export function LoginForm({
   const [message, setMessage] = useState<string | null>(null);
   const requestPending = useRef(false);
   const alertRef = useRef<HTMLDivElement>(null);
+  const turnstileWidget = useRef<TurnstileWidgetHandle>(null);
+  const token = useRef<string | null>(null);
+  const [verified, setVerified] = useState(false);
+  const setToken = useCallback((value: string | null) => {
+    token.current = value;
+    setVerified(value !== null);
+  }, []);
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "", keepSignedIn: false },
@@ -49,11 +62,14 @@ export function LoginForm({
   }
 
   const handleSubmit: SubmitHandler<LoginValues> = async (values) => {
-    if (requestPending.current) return;
-    requestPending.current = true;
+    const turnstileToken = token.current;
+    if (!turnstileToken) {
+      report("Complete the security verification to sign in.");
+      return;
+    }
     setMessage(null);
     try {
-      await onSubmit(values);
+      await onSubmit({ ...values, turnstileToken });
     } catch (error) {
       report(
         error instanceof Error
@@ -61,9 +77,20 @@ export function LoginForm({
           : "Unable to sign in. Please try again.",
       );
     } finally {
-      requestPending.current = false;
+      turnstileWidget.current?.reset();
     }
   };
+
+  async function submit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (requestPending.current) return;
+    requestPending.current = true;
+    try {
+      await form.handleSubmit(handleSubmit)(event);
+    } finally {
+      requestPending.current = false;
+    }
+  }
 
   return (
     <div className="w-full">
@@ -75,11 +102,7 @@ export function LoginForm({
           Sign in with your work email to manage your fleet.
         </p>
       </header>
-      <form
-        noValidate
-        onSubmit={(event) => void form.handleSubmit(handleSubmit)(event)}
-        aria-busy={busy}
-      >
+      <form method="post" noValidate onSubmit={submit} aria-busy={busy}>
         <FieldGroup className="gap-5">
           <Controller
             name="email"
@@ -190,20 +213,28 @@ export function LoginForm({
               </Field>
             )}
           />
-          <Button
-            type="submit"
-            disabled={busy}
-            className="h-11 w-full gap-2 px-4 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
-          >
-            {form.formState.isSubmitting && (
-              <LoaderCircle
-                aria-hidden="true"
-                className="animate-spin motion-reduce:animate-none"
-              />
-            )}
-            {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
-            {!busy && <ArrowRight aria-hidden="true" className="size-4" />}
-          </Button>
+          <div>
+            <TurnstileWidget ref={turnstileWidget} onTokenChange={setToken} />
+            <span className="sr-only" aria-live="polite">
+              {verified || busy
+                ? ""
+                : "Sign-in is waiting for security verification."}
+            </span>
+            <Button
+              type="submit"
+              disabled={busy || !verified}
+              className="h-11 w-full gap-2 px-4 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
+            >
+              {busy && (
+                <LoaderCircle
+                  aria-hidden="true"
+                  className="animate-spin motion-reduce:animate-none"
+                />
+              )}
+              {busy ? "Signing in…" : "Sign in"}
+              {!busy && <ArrowRight aria-hidden="true" className="size-4" />}
+            </Button>
+          </div>
           {message && <AuthAlert ref={alertRef}>{message}</AuthAlert>}
         </FieldGroup>
       </form>

@@ -1,7 +1,8 @@
 import "server-only";
 import { MongoServerError } from "mongodb";
 import { AuthError, type AuthState, type TwoFactorSetupState } from "../types";
-import type { LoginValues } from "../login";
+import type { LoginRequest } from "../login";
+import { verifyLoginTurnstile } from "./turnstile";
 import { assessPassword } from "../password-policy";
 import { fleetDb, type FleetAccount, type FleetSession } from "./db";
 import { digest, unseal } from "./crypto";
@@ -156,9 +157,10 @@ async function nextSecondFactor(accountId: StepContext["account"]["_id"]) {
   return profile ? "TWO_FACTOR_REQUIRED" : "TWO_FACTOR_SETUP_REQUIRED";
 }
 
-export async function signIn(values: LoginValues) {
+export async function signIn(values: LoginRequest) {
   await throttle("login:global", 600, 60_000);
   await throttle("login:" + values.email, 10, 15 * 60_000);
+  await verifyLoginTurnstile(values.turnstileToken);
   const account = await findApprovedAccount({ companyEmail: values.email });
   const valid = await verifyPassword(values.password, account?.password);
   if (!valid || !account)

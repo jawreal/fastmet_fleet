@@ -1,4 +1,4 @@
-import type { LoginValues } from "./login";
+import type { LoginRequest } from "./login";
 
 export type TwoFactorSetupState = {
   status: "TWO_FACTOR_SETUP_REQUIRED";
@@ -46,7 +46,7 @@ export interface TwoFactorSetup {
 }
 
 export interface AuthAdapter {
-  login(values: LoginValues): Promise<AuthState>;
+  login(values: LoginRequest): Promise<AuthState>;
   changePassword(values: {
     newPassword: string;
     confirmPassword: string;

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { createServer } from "node:net";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
@@ -26,6 +26,10 @@ async function freePort() {
 async function startApp(t, uri) {
   const port = await freePort();
   const origin = "http://127.0.0.1:" + port;
+  const siteverifyMock = new URL(
+    "./fixtures/turnstile-siteverify.mjs",
+    import.meta.url,
+  );
   const child = spawn(
     process.execPath,
     [
@@ -40,10 +44,17 @@ async function startApp(t, uri) {
       env: {
         ...process.env,
         NODE_ENV: "development",
+        NODE_OPTIONS: (
+          (process.env.NODE_OPTIONS ?? "") +
+          " --import=" +
+          siteverifyMock.href
+        ).trim(),
         NEXT_TELEMETRY_DISABLED: "1",
         FLEET_MONGODB_URI: uri,
         FLEET_AUTH_ORIGIN: origin,
         FLEET_AUTH_ENCRYPTION_KEY: randomBytes(32).toString("hex"),
+        FLEET_TURNSTILE_SECRET_KEY: "mock-siteverify-secret",
+        FLEET_TURNSTILE_HOSTNAME: "127.0.0.1",
       },
       stdio: ["ignore", "pipe", "pipe"],
     },
@@ -100,7 +111,11 @@ function client(origin) {
 
 const api = "/api/fleet/auth/";
 async function requestState(browser, action, input, status = 200) {
-  const response = await browser.request(api + action, input);
+  const body =
+    action === "login"
+      ? { turnstileToken: randomBytes(24).toString("hex"), ...input }
+      : input;
+  const response = await browser.request(api + action, body);
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal(response.status, status);
   return { body: await response.json(), headers: response.headers };
@@ -126,6 +141,79 @@ async function assertRedirect(browser, destination) {
     !html.includes('class="fleet-dashboard"'),
     "The dashboard shell was emitted before authorization.",
   );
+}
+
+async function assertTurnstileProtection(origin, db) {
+  const account = await createDevelopmentAccount(db);
+  const credentials = {
+    email: account.companyEmail,
+    password: account.initialPassword,
+    keepSignedIn: false,
+  };
+  const browser = client(origin);
+  for (const [token, message] of [
+    [undefined, /complete the security verification/i],
+    ["invalid-token", /security verification failed/i],
+    ["wrong-host", /security verification failed/i],
+    ["wrong-action", /security verification failed/i],
+    ["consumed-token", /expired or was already used/i],
+    ["stale-token", /expired or was already used/i],
+  ]) {
+    const { body } = await requestState(
+      browser,
+      "login",
+      { ...credentials, turnstileToken: token },
+      400,
+    );
+    assert.match(body.error.message, message);
+    assert.equal(browser.sessionCookie(), "");
+  }
+  for (const token of ["service-unavailable", "siteverify-timeout"]) {
+    const failure = await requestState(
+      browser,
+      "login",
+      { ...credentials, turnstileToken: token },
+      503,
+    );
+    assert.equal(failure.body.error.code, "UNAVAILABLE");
+    assert.equal(browser.sessionCookie(), "");
+  }
+
+  const sharedToken = randomBytes(24).toString("hex");
+  const request = { ...credentials, turnstileToken: sharedToken };
+  const responses = await Promise.all(
+    [client(origin), client(origin)].map((connection) =>
+      connection.request(api + "login", request),
+    ),
+  );
+  assert.deepEqual(
+    responses.map((response) => response.status).sort(),
+    [200, 400],
+  );
+  const hash = createHash("sha256").update(sharedToken).digest("hex");
+  const uses = db.collection("fleetwebturnstileuses");
+  assert.ok(await uses.findOne({ _id: hash }));
+  assert.equal(await uses.findOne({ _id: sharedToken }), null);
+
+  const limitedCredentials = {
+    ...credentials,
+    email: "rate-limit-test@example.com",
+  };
+  for (const _ of Array(10)) {
+    await requestState(
+      browser,
+      "login",
+      { ...limitedCredentials, turnstileToken: "invalid-token" },
+      400,
+    );
+  }
+  const limited = await requestState(
+    browser,
+    "login",
+    { ...limitedCredentials, turnstileToken: "service-unavailable" },
+    429,
+  );
+  assert.equal(limited.body.error.code, "RATE_LIMITED");
 }
 
 test("development seeding rejects production and unapproved MongoDB hosts", () => {
@@ -161,6 +249,10 @@ test(
     const initialHash = await bcrypt.hash(initialPassword, 12);
     await accounts.updateOne({ _id: id }, { $set: { password: initialHash } });
     const origin = await startApp(t, uri);
+    await t.test(
+      "Turnstile verifies sign-ins, prevents replay, and runs after rate limiting",
+      () => assertTurnstileProtection(origin, db),
+    );
     const browser = client(origin);
     const email = companyEmail;
     const newPassword =
