@@ -159,11 +159,11 @@ export function EarningsDashboard() {
               period
             </span>
           </div>
-          <div
-            className="h-56 w-full"
-            role="img"
-            aria-label={`Daily trip earnings for the sample period. Total ${pesos(total)}. Hover or focus the chart to inspect each day.`}
-          >
+          <figure className="h-56 w-full">
+            <figcaption className="sr-only">
+              Daily trip earnings for the sample period. Total {pesos(total)}.
+              Use the arrow keys when the chart is focused to inspect each day.
+            </figcaption>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartData}
@@ -210,7 +210,7 @@ export function EarningsDashboard() {
                 />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </figure>
         </CardContent>
         <CardFooter className="justify-between gap-3 border-t text-muted-foreground">
           <span>

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,15 +27,16 @@ import {
 type ChoiceProps = { label: string; options: string[] };
 
 function Choice({ label, options }: Readonly<ChoiceProps>) {
+  const id = useId();
   return (
     <div className="grid gap-2">
-      <Label>{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       <Select
         defaultValue={options[0]}
         name={label}
         items={options.map((value) => ({ value, label: value }))}
       >
-        <SelectTrigger aria-label={label} className="w-full">
+        <SelectTrigger id={id} className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

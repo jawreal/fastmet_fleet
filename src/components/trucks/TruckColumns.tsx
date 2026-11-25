@@ -27,22 +27,22 @@ type TruckColumnOptions = {
 type CrewAssignmentProps = {
   truck: FleetTruck;
   crew: CrewMember[];
-  role: CrewRole;
+  crewRole: CrewRole;
   onAssign: AssignmentHandler;
 };
 
 export function CrewAssignment({
   truck,
   crew,
-  role,
+  crewRole,
   onAssign,
 }: Readonly<CrewAssignmentProps>) {
-  const value = role === "Driver" ? truck.driverId : truck.helperId;
+  const value = crewRole === "Driver" ? truck.driverId : truck.helperId;
   const hasAssignedPerson = crew.some((item) => item.id === value);
   const options = [
-    { value: "", label: `No ${role.toLowerCase()}` },
+    { value: "", label: `No ${crewRole.toLowerCase()}` },
     ...crew
-      .filter((item) => item.role === role)
+      .filter((item) => item.role === crewRole)
       .map((item) => ({
         value: item.id,
         label: `${item.name}${item.status === "Off duty" ? " (off duty)" : ""}`,
@@ -55,11 +55,11 @@ export function CrewAssignment({
         value={value}
         items={options}
         onValueChange={(next) => {
-          if (next !== null) onAssign(truck.plate, role, next);
+          if (next !== null) onAssign(truck.plate, crewRole, next);
         }}
       >
         <SelectTrigger
-          aria-label={`${role} for ${truck.plate}`}
+          aria-label={`${crewRole} for ${truck.plate}`}
           className="w-full min-w-36"
         >
           <SelectValue />
@@ -72,7 +72,7 @@ export function CrewAssignment({
           ))}
         </SelectContent>
       </Select>
-      {role === "Driver" && !hasAssignedPerson && (
+      {crewRole === "Driver" && !hasAssignedPerson && (
         <p className="text-xs text-yellow-700 dark:text-primary">
           Needs a driver
         </p>
@@ -154,7 +154,7 @@ export function createAssignmentColumns({
         <CrewAssignment
           truck={truck}
           crew={crew}
-          role="Driver"
+          crewRole="Driver"
           onAssign={onAssign}
         />
       ),
@@ -166,7 +166,7 @@ export function createAssignmentColumns({
         <CrewAssignment
           truck={truck}
           crew={crew}
-          role="Helper"
+          crewRole="Helper"
           onAssign={onAssign}
         />
       ),

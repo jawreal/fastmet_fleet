@@ -202,7 +202,7 @@ export function TrucksDashboard() {
                   Add vehicle
                 </Button>
               ) : (
-                <AddCrewDialog role="Driver" onAdd={addCrewMember} />
+                <AddCrewDialog initialRole="Driver" onAdd={addCrewMember} />
               )}
             </div>
           </div>
