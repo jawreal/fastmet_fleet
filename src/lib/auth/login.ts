@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { passwordInput } from "./schemas";
+import { passwordInput } from "./password-input";
 
 export const loginSchema = z.strictObject({
   email: z

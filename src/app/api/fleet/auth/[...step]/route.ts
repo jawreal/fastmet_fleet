@@ -77,7 +77,7 @@ async function readBody(request: NextRequest) {
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
         size += chunk.byteLength;
-        if (size > 4096) {
+        if (size > 8192) {
           controller.error(
             new AuthError("INVALID_INPUT", "This request is too large."),
           );
@@ -114,7 +114,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
     return json({ error: { code: "NOT_FOUND" } }, 404);
   return handle(async () => {
     const context = await readFleetSession();
-    return context ? stateFor(context.session) : signedOut;
+    return context ? stateFor(context.session, context.account) : signedOut;
   });
 }
 

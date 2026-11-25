@@ -6,6 +6,8 @@ export type FleetAccount = {
   _id: ObjectId;
   companyEmail: string;
   companyName: string;
+  registeredBusinessName?: string;
+  repFullName?: string;
   garageAddress: string;
   status: string;
   password: string;

@@ -5,7 +5,13 @@ import { Secret, TOTP } from "otpauth";
 import { AuthError } from "../types";
 import { fleetDb } from "./db";
 import { digest, seal, unseal } from "./crypto";
-import { advance, requireStep, throttle, type StepContext } from "./flow";
+import {
+  advance,
+  requireStep,
+  throttle,
+  twoFactorSetupState,
+  type StepContext,
+} from "./flow";
 
 function totpFor(secret: string, label: string) {
   return new TOTP({
@@ -72,11 +78,7 @@ export async function getTwoFactorSetup() {
   const manualKey = unseal(encrypted, context);
 
   return {
-    state: {
-      status: "TWO_FACTOR_SETUP_REQUIRED",
-      nextAction: "confirmTwoFactorSetup",
-      expiresAt: session.expiresAt.getTime(),
-    },
+    state: twoFactorSetupState(session, "confirmTwoFactorSetup"),
     manualKey,
     provisioningUri: totpFor(manualKey, account.companyEmail).toString(),
   } as const;

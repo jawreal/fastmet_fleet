@@ -4,6 +4,7 @@ import {
   type AuthAdapter,
   type AuthState,
   type TwoFactorSetup,
+  type TwoFactorSetupState,
 } from "./types";
 
 const errorSchema = z.object({
@@ -26,6 +27,8 @@ const setupState = z.object({
   status: z.literal("TWO_FACTOR_SETUP_REQUIRED"),
   nextAction: z.enum(["getTwoFactorSetup", "confirmTwoFactorSetup"]),
   expiresAt,
+  setupAttemptId: z.string(),
+  passwordChanged: z.literal(true).optional(),
 });
 const authStateSchema = z.discriminatedUnion("status", [
   z.object({
@@ -37,6 +40,7 @@ const authStateSchema = z.discriminatedUnion("status", [
     status: z.literal("PASSWORD_CHANGE_REQUIRED"),
     nextAction: z.literal("changePassword"),
     expiresAt,
+    passwordTerms: z.array(z.string()),
   }),
   setupState,
   z.object({
@@ -94,15 +98,49 @@ async function request<T>(
   );
 }
 
-function state(path: string, body?: object) {
-  return request(path, authStateSchema, body);
+const passwordNoticeKey = "fleet:password-change-notice";
+let passwordNoticeAttempt: string | null = null;
+
+function applyPasswordNotice(
+  next: TwoFactorSetupState,
+  confirmedChange = false,
+): TwoFactorSetupState {
+  if (confirmedChange) passwordNoticeAttempt = next.setupAttemptId;
+  // The tab keeps only a presentation identifier so refreshes can restore the notice.
+  try {
+    if (confirmedChange) {
+      sessionStorage.setItem(passwordNoticeKey, next.setupAttemptId);
+    } else {
+      passwordNoticeAttempt ??= sessionStorage.getItem(passwordNoticeKey);
+    }
+  } catch {
+    // The notice still works across client navigation when storage is unavailable.
+  }
+  return {
+    ...next,
+    passwordChanged:
+      passwordNoticeAttempt === next.setupAttemptId ? true : undefined,
+  };
+}
+
+async function state(path: string, body?: object) {
+  const next = await request(path, authStateSchema, body);
+  return next.status === "TWO_FACTOR_SETUP_REQUIRED"
+    ? applyPasswordNotice(
+        next,
+        path === "change-password" && next.passwordChanged === true,
+      )
+    : next;
 }
 
 const adapter: AuthAdapter = {
   login: (values) => state("login", values),
   changePassword: (values) => state("change-password", values),
   changeAccountPassword: (values) => state("account-password", values),
-  getTwoFactorSetup: () => request("two-factor/setup", setupSchema, {}),
+  getTwoFactorSetup: async () => {
+    const setup = await request("two-factor/setup", setupSchema, {});
+    return { ...setup, state: applyPasswordNotice(setup.state) };
+  },
   confirmTwoFactorSetup: (code) => state("two-factor/confirm", { code }),
   verifyTwoFactor: (code) => state("two-factor/verify", { code }),
   verifyRecoveryCode: (code) => state("two-factor/recovery", { code }),

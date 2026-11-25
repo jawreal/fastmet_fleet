@@ -155,12 +155,18 @@ test(
       await mongo.stop();
     });
     const db = connection.db();
-    const { id, companyEmail, initialPassword } =
-      await createDevelopmentAccount(db);
+    const { id, companyEmail } = await createDevelopmentAccount(db);
+    const accounts = db.collection("fleetapplications");
+    const initialPassword = "qwerty";
+    const initialHash = await bcrypt.hash(initialPassword, 12);
+    await accounts.updateOne({ _id: id }, { $set: { password: initialHash } });
     const origin = await startApp(t, uri);
     const browser = client(origin);
     const email = companyEmail;
-    const newPassword = "A real test passphrase 719";
+    const newPassword =
+      "  🧭 café lantern 🐙 otoño basket 🎨 café orchard 🌱 mellow river 🐋 ";
+    assert.equal(Array.from(newPassword).length, 64);
+    assert.ok(Buffer.byteLength(newPassword) > 72);
     const change = { newPassword, confirmPassword: newPassword };
 
     await assertRedirect(browser, "/login");
@@ -193,8 +199,34 @@ test(
       { currentPassword: initialPassword, ...change },
       409,
     );
+    const weakPasswords = [
+      ["Zq!8mX#3tV+5Na", /at least 15 characters/i],
+      ["qwerty123456789!", /common passwords/i],
+      ["P@ssw0rd1234567!", /common/i],
+      ["Admin123Admin123", /repeated|common/i],
+      ["abcdEFghijklmnOP", /sequence/i],
+      ["!!!!!!!!!!!!!!!", /repeat/i],
+      ["FleetQARepresentative2026!", /name, company, or email/i],
+      ["x".repeat(129), /at most 128 characters/i],
+    ];
+    for (const [password, advice] of weakPasswords) {
+      const { body } = await requestState(
+        browser,
+        "change-password",
+        { newPassword: password, confirmPassword: password },
+        400,
+      );
+      assert.equal(body.error.code, "INVALID_INPUT");
+      assert.match(body.error.message, advice);
+    }
+    const beforeChange = await accounts.findOne({ _id: id });
+    assert.equal(beforeChange.password, initialHash);
+    assert.equal(beforeChange.mustChangePassword, true);
+
     const changed = await requestState(browser, "change-password", change);
     assert.equal(changed.body.status, "TWO_FACTOR_SETUP_REQUIRED");
+    assert.equal(changed.body.passwordChanged, true);
+    assert.match(changed.body.setupAttemptId, /^[a-f\d]{64}$/);
     assert.notEqual(browser.sessionCookie(), initialCookie);
     assert.equal(
       (await db.collection("fleetapplications").findOne({ _id: id }))
@@ -203,10 +235,30 @@ test(
     );
     await assertRedirect(browser, "/two-factor/setup");
 
+    const setupState = (await requestState(browser, "state")).body;
+    assert.equal(setupState.setupAttemptId, changed.body.setupAttemptId);
+    assert.equal(setupState.passwordChanged, undefined);
+
+    const freshSignIn = (
+      await requestState(client(origin), "login", {
+        email,
+        password: newPassword,
+        keepSignedIn: false,
+      })
+    ).body;
+    assert.equal(freshSignIn.status, "TWO_FACTOR_SETUP_REQUIRED");
+    assert.notEqual(freshSignIn.setupAttemptId, changed.body.setupAttemptId);
+    assert.equal(freshSignIn.passwordChanged, undefined);
+
     const setup = (await requestState(browser, "two-factor/setup", {})).body;
     const resumedSetup = (await requestState(browser, "two-factor/setup", {}))
       .body;
     assert.equal(setup.manualKey, resumedSetup.manualKey);
+    assert.equal(setup.state.setupAttemptId, changed.body.setupAttemptId);
+    assert.equal(
+      resumedSetup.state.setupAttemptId,
+      changed.body.setupAttemptId,
+    );
     const authenticator = URI.parse(setup.provisioningUri);
     assert.ok(authenticator instanceof TOTP);
     assert.equal(authenticator.secret.base32, setup.manualKey);
@@ -241,11 +293,19 @@ test(
       { email, password: initialPassword, keepSignedIn: false },
       401,
     );
+    const differentEnding = newPassword.slice(0, -1) + "!";
+    assert.ok(Buffer.byteLength(newPassword.slice(0, -1)) > 72);
+    await requestState(
+      browser,
+      "login",
+      { email, password: differentEnding, keepSignedIn: false },
+      401,
+    );
 
     const returning = (
       await requestState(browser, "login", {
         email,
-        password: newPassword,
+        password: newPassword.normalize("NFD"),
         keepSignedIn: false,
       })
     ).body;
@@ -259,7 +319,23 @@ test(
       "AUTHENTICATED",
     );
     const authenticatedCookie = browser.sessionCookie();
-    const anotherPassword = "Fleet settings QA passphrase 930";
+    const emailPassword = email + "2026!";
+    const weakUpdate = await requestState(
+      browser,
+      "account-password",
+      {
+        currentPassword: newPassword,
+        newPassword: emailPassword,
+        confirmPassword: emailPassword,
+      },
+      400,
+    );
+    assert.equal(weakUpdate.body.error.code, "INVALID_INPUT");
+    assert.match(weakUpdate.body.error.message, /name, company, or email/i);
+    assert.equal(browser.sessionCookie(), authenticatedCookie);
+
+    const anotherPassword = "m+UP89t,N;#xJ2s";
+    assert.equal(anotherPassword.length, 15);
     const updated = await requestState(browser, "account-password", {
       currentPassword: newPassword,
       newPassword: anotherPassword,
@@ -303,11 +379,8 @@ test(
       401,
     );
 
-    const stored = await db
-      .collection("fleetapplications")
-      .findOne({ _id: id });
-    assert.equal(await bcrypt.compare(anotherPassword, stored.password), true);
-    assert.equal(await bcrypt.compare(newPassword, stored.password), false);
+    const stored = await accounts.findOne({ _id: id });
+    assert.match(stored.password, /^scrypt-v1\$/);
     assert.equal(Object.hasOwn(stored, "confirmPassword"), false);
     const profile = await db
       .collection("fleetwebauthenticators")

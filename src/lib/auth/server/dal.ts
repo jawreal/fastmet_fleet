@@ -26,6 +26,12 @@ const tokenPattern = /^[A-Za-z0-9_-]{43}$/;
 
 export const signedOut = { status: "SIGNED_OUT", nextAction: "login" } as const;
 
+export function companyPasswordTerms(
+  account: Pick<FleetAccount, "companyName" | "companyEmail">,
+) {
+  return [account.companyName, account.companyEmail.split("@", 1)[0]];
+}
+
 export async function findApprovedAccount(
   lookup: { companyEmail: string } | { _id: ObjectId },
 ) {
@@ -40,6 +46,8 @@ export async function findApprovedAccount(
     projection: {
       companyEmail: 1,
       companyName: 1,
+      registeredBusinessName: 1,
+      repFullName: 1,
       garageAddress: 1,
       password: 1,
       mustChangePassword: 1,
@@ -147,16 +155,26 @@ export async function issueFleetSession(
 }
 
 // Memoize per render only. No session or company data is shared across requests.
-export const requireFleetCompany = cache(async () => {
+const requireFleetContext = cache(async () => {
   const context = await readFleetSession();
   if (!context) redirect(authRoutes.SIGNED_OUT);
   if (context.session.status !== "AUTHENTICATED")
     redirect(authRoutes[context.session.status]);
-  return {
-    name: context.account.companyName,
-    location: context.account.garageAddress,
-  };
+  return context;
 });
+
+export async function requireFleetCompany() {
+  const { account } = await requireFleetContext();
+  return {
+    name: account.companyName,
+    location: account.garageAddress,
+  };
+}
+
+export async function requireCompanyPasswordTerms() {
+  const { account } = await requireFleetContext();
+  return companyPasswordTerms(account);
+}
 
 export function authenticatedState(session: FleetSession): AuthState {
   return {

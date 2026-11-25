@@ -1,12 +1,14 @@
 import "server-only";
-import bcrypt from "bcryptjs";
 import { MongoServerError } from "mongodb";
-import { AuthError, type AuthState } from "../types";
+import { AuthError, type AuthState, type TwoFactorSetupState } from "../types";
 import type { LoginValues } from "../login";
-import { fleetDb, type FleetSession } from "./db";
+import { assessPassword } from "../password-policy";
+import { fleetDb, type FleetAccount, type FleetSession } from "./db";
 import { digest, unseal } from "./crypto";
+import { hashPassword, verifyPassword } from "./password";
 import {
   authenticatedState,
+  companyPasswordTerms,
   findApprovedAccount,
   issueFleetSession,
   readFleetSession,
@@ -14,9 +16,6 @@ import {
   signedOut,
 } from "./dal";
 
-const dummyHash =
-  "$2b$12$5xBpEK3zLIIPmnRGevu9L.TljUBaTLcsT/811FOxn635qN5JfMIw.";
-const passwordRounds = 12;
 export type StepContext = NonNullable<
   Awaited<ReturnType<typeof readFleetSession>>
 >;
@@ -73,7 +72,22 @@ export async function requireStep(status: FleetSession["status"]) {
   return context;
 }
 
-export async function stateFor(session: FleetSession): Promise<AuthState> {
+export function twoFactorSetupState(
+  session: FleetSession,
+  nextAction: TwoFactorSetupState["nextAction"],
+): TwoFactorSetupState {
+  return {
+    status: "TWO_FACTOR_SETUP_REQUIRED",
+    nextAction,
+    expiresAt: session.expiresAt.getTime(),
+    setupAttemptId: digest("fleet:setup-notice:" + session._id),
+  };
+}
+
+export async function stateFor(
+  session: FleetSession,
+  account: FleetAccount,
+): Promise<AuthState> {
   const expiresAt = session.expiresAt.getTime();
   switch (session.status) {
     case "PASSWORD_CHANGE_REQUIRED":
@@ -81,13 +95,10 @@ export async function stateFor(session: FleetSession): Promise<AuthState> {
         status: session.status,
         nextAction: "changePassword",
         expiresAt,
+        passwordTerms: companyPasswordTerms(account),
       };
     case "TWO_FACTOR_SETUP_REQUIRED":
-      return {
-        status: session.status,
-        nextAction: "getTwoFactorSetup",
-        expiresAt,
-      };
+      return twoFactorSetupState(session, "getTwoFactorSetup");
     case "TWO_FACTOR_REQUIRED":
       return {
         status: session.status,
@@ -134,6 +145,7 @@ export async function advance(
         mfaVersion,
       ),
     ),
+    account,
   );
 }
 
@@ -148,10 +160,7 @@ export async function signIn(values: LoginValues) {
   await throttle("login:global", 600, 60_000);
   await throttle("login:" + values.email, 10, 15 * 60_000);
   const account = await findApprovedAccount({ companyEmail: values.email });
-  const valid = await bcrypt.compare(
-    values.password,
-    account?.password ?? dummyHash,
-  );
+  const valid = await verifyPassword(values.password, account?.password);
   if (!valid || !account)
     throw new AuthError("INVALID_CREDENTIALS", "Invalid email or password.");
 
@@ -164,17 +173,25 @@ export async function signIn(values: LoginValues) {
     requireTransition(
       await issueFleetSession(account, status, values.keepSignedIn),
     ),
+    account,
   );
 }
 
 async function replacePassword(context: StepContext, nextPassword: string) {
   const { account } = context;
   await throttle("password:" + account._id.toHexString(), 10, 15 * 60_000);
-  if (await bcrypt.compare(nextPassword, account.password)) {
+  const { issue } = assessPassword(nextPassword, [
+    ...companyPasswordTerms(account),
+    account.companyEmail,
+    account.registeredBusinessName ?? "",
+    account.repFullName ?? "",
+  ]);
+  if (issue) throw new AuthError("INVALID_INPUT", issue);
+  if (await verifyPassword(nextPassword, account.password)) {
     throw new AuthError("INVALID_INPUT", "Choose a different password.");
   }
 
-  const password = await bcrypt.hash(nextPassword, passwordRounds);
+  const password = await hashPassword(nextPassword);
   const result = await (
     await fleetDb()
   ).accounts.updateOne(
@@ -195,10 +212,23 @@ async function replacePassword(context: StepContext, nextPassword: string) {
   return { ...account, password, mustChangePassword: false };
 }
 
-export async function changeInitialPassword(newPassword: string) {
+export async function changeInitialPassword(
+  newPassword: string,
+): Promise<AuthState> {
   const context = await requireStep("PASSWORD_CHANGE_REQUIRED");
   const account = await replacePassword(context, newPassword);
-  return advance({ ...context, account }, await nextSecondFactor(account._id));
+  const next = await advance(
+    { ...context, account },
+    await nextSecondFactor(account._id),
+  );
+  if (
+    context.account.mustChangePassword === true &&
+    account.mustChangePassword === false &&
+    next.status === "TWO_FACTOR_SETUP_REQUIRED"
+  ) {
+    return { ...next, passwordChanged: true };
+  }
+  return next;
 }
 
 export async function changeAccountPassword(
@@ -211,7 +241,7 @@ export async function changeAccountPassword(
     5,
     15 * 60_000,
   );
-  if (!(await bcrypt.compare(currentPassword, context.account.password))) {
+  if (!(await verifyPassword(currentPassword, context.account.password))) {
     throw new AuthError(
       "INVALID_CREDENTIALS",
       "The current password is incorrect.",

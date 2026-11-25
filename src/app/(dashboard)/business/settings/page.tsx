@@ -1,11 +1,20 @@
 import { protectFleetPage } from "@/lib/auth/server/protectPage";
+import { requireCompanyPasswordTerms } from "@/lib/auth/server/dal";
 import { AppShell } from "@/components/AppShell";
 import { CompanySettings } from "@/components/settings/CompanySettings";
 import { PasswordSettings } from "@/components/settings/PasswordSettings";
 import { FleetDataSettings } from "@/components/settings/FleetDataSettings";
 import { VehicleRatesSettings } from "@/components/settings/VehicleRatesSettings";
 
-function Page() {
+const navLinks = [
+  ["company", "Company"],
+  ["password", "Password"],
+  ["vehicle-rates", "Vehicle rates"],
+  ["fleet-data", "Fleet data"],
+];
+
+async function Page() {
+  const passwordTerms = await requireCompanyPasswordTerms();
   return (
     <AppShell title="Settings">
       <div className="@container mx-auto flex w-full max-w-5xl flex-col gap-6">
@@ -20,12 +29,7 @@ function Page() {
             aria-label="Settings sections"
             className="flex gap-1 overflow-x-auto md:sticky md:top-4 md:flex-col"
           >
-            {[
-              ["company", "Company"],
-              ["password", "Password"],
-              ["vehicle-rates", "Vehicle rates"],
-              ["fleet-data", "Fleet data"],
-            ].map(([id, label]) => (
+            {navLinks.map(([id, label]) => (
               <a
                 key={id}
                 href={"#" + id}
@@ -40,7 +44,7 @@ function Page() {
               <CompanySettings />
             </section>
             <section id="password" className="scroll-mt-5">
-              <PasswordSettings />
+              <PasswordSettings passwordTerms={passwordTerms} />
             </section>
             <section id="vehicle-rates" className="scroll-mt-5">
               <VehicleRatesSettings />

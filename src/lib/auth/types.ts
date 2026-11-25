@@ -1,5 +1,13 @@
 import type { LoginValues } from "./login";
 
+export type TwoFactorSetupState = {
+  status: "TWO_FACTOR_SETUP_REQUIRED";
+  nextAction: "getTwoFactorSetup" | "confirmTwoFactorSetup";
+  expiresAt: number;
+  setupAttemptId: string;
+  passwordChanged?: true;
+};
+
 export type AuthState =
   | {
       status: "SIGNED_OUT";
@@ -10,12 +18,9 @@ export type AuthState =
       status: "PASSWORD_CHANGE_REQUIRED";
       nextAction: "changePassword";
       expiresAt: number;
+      passwordTerms: readonly string[];
     }
-  | {
-      status: "TWO_FACTOR_SETUP_REQUIRED";
-      nextAction: "getTwoFactorSetup" | "confirmTwoFactorSetup";
-      expiresAt: number;
-    }
+  | TwoFactorSetupState
   | {
       status: "TWO_FACTOR_REQUIRED";
       nextAction: "verifyTwoFactor" | "verifyRecoveryCode";
@@ -35,7 +40,7 @@ export type AuthState =
     };
 
 export interface TwoFactorSetup {
-  state: Extract<AuthState, { status: "TWO_FACTOR_SETUP_REQUIRED" }>;
+  state: TwoFactorSetupState;
   manualKey: string;
   provisioningUri: string;
 }

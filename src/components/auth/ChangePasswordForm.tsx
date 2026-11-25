@@ -1,24 +1,28 @@
 "use client";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { checkPasswordStrength } from "@/lib/auth/password-policy";
 import { passwordSchema, type PasswordValues } from "@/lib/auth/schemas";
 import { AuthStep, type RunAuthAction } from "./AuthStep";
-import {
-  PasswordField,
-  StepHeader,
-  SubmitButton,
-  useFormMessage,
-} from "./FormParts";
+import { PasswordField } from "./PasswordField";
+import { StepHeader, SubmitButton, useFormMessage } from "./FormParts";
 
 interface IChangePasswordForm {
   run: RunAuthAction;
+  passwordTerms: readonly string[];
 }
 
-function ChangePasswordForm({ run }: Readonly<IChangePasswordForm>) {
+function ChangePasswordForm({
+  run,
+  passwordTerms,
+}: Readonly<IChangePasswordForm>) {
   const form = useForm<PasswordValues>({
-    resolver: zodResolver(passwordSchema),
+    resolver: zodResolver(
+      passwordSchema.superRefine(checkPasswordStrength(passwordTerms)),
+    ),
     defaultValues: { newPassword: "", confirmPassword: "" },
   });
+  const newPassword = useWatch({ control: form.control, name: "newPassword" });
   const message = useFormMessage();
   const busy = form.formState.isSubmitting;
 
@@ -44,14 +48,12 @@ function ChangePasswordForm({ run }: Readonly<IChangePasswordForm>) {
         })}
       >
         {message.alert}
-        <p id="password-requirements" className="text-xs text-muted-foreground">
-          Use at least 8 characters. Both passwords must match.
-        </p>
         <PasswordField
           id="new-password"
           label="New password"
           registration={form.register("newPassword")}
           error={form.formState.errors.newPassword?.message}
+          strength={{ value: newPassword, passwordTerms }}
           busy={busy}
         />
         <PasswordField
@@ -69,7 +71,11 @@ function ChangePasswordForm({ run }: Readonly<IChangePasswordForm>) {
 export function ChangePasswordStep() {
   return (
     <AuthStep expected="PASSWORD_CHANGE_REQUIRED">
-      {(_, run) => <ChangePasswordForm run={run} />}
+      {(state, run) =>
+        state.status === "PASSWORD_CHANGE_REQUIRED" && (
+          <ChangePasswordForm run={run} passwordTerms={state.passwordTerms} />
+        )
+      }
     </AuthStep>
   );
 }

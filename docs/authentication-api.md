@@ -1,6 +1,6 @@
 # Fleet authentication
 
-FastMet Fleet owns credential verification, password changes, Google Authenticator enrollment and verification, recovery codes, sessions, and dashboard authorization. It reads the approved company's email and bcrypt hash directly from the shared `fleetapplications` collection. The FastMet backend provides registration and Fleet business data. The Fleet app uses its own same-origin auth endpoints and never calls the provisional Express auth routes.
+FastMet Fleet owns credential verification, password changes, Google Authenticator enrollment and verification, recovery codes, sessions, and dashboard authorization. It reads the approved company's email and password hash directly from the shared `fleetapplications` collection. The FastMet backend provides registration and Fleet business data. The Fleet app uses its own same-origin auth endpoints and never calls the provisional Express auth routes.
 
 ## Development setup
 
@@ -44,10 +44,12 @@ The typed adapter in `src/lib/auth/adapter.ts` uses the endpoints under `/api/fl
 
 Initial passwords do not expire. Pending sessions expire in ten minutes. A full session lasts at most seven days with the checkbox selected. Otherwise the browser-session cookie has an eight-hour server maximum and a 30-minute idle timeout. Session tokens rotate across authentication steps, and changing the password invalidates sessions bound to the previous hash. Confirmation values are validated in memory.
 
+Fleet applies the same strength policy to initial password replacement and changes in Settings. New passwords are 15–128 Unicode characters. The policy rejects common and predictable choices, including passwords that rely on company or account details. Authentication still verifies existing bcrypt credentials. Newly saved passwords use salted scrypt (`scrypt-v1`), with NFC Unicode normalization and full-length verification. Fleet currently directs password-reset requests to the company administrator. Future reset flows in Fleet should enforce the same policy before writing the new hash.
+
 The DAL verifies session expiry, approved status, the current credential version, password replacement, and the enrolled authenticator before exposing dashboard data. Both the shared dashboard layout and individual pages call the guard. New private route handlers and server actions must also authenticate at their data boundary. Use `requireStep("AUTHENTICATED")` for mutations in the Fleet auth flow.
 
 The database stores hashed session tokens, AES-GCM encrypted authenticator secrets, and hashed recovery codes. An encrypted delivery copy of recovery codes exists until acknowledgment so the enrollment can be resumed. MongoDB atomically records the last accepted TOTP time step to prevent replay across sessions. Requests are throttled using MongoDB counters.
 
 ## Checks
 
-Run `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build`, and `pnpm test:fleet-auth`. The auth test starts Next and an isolated MongoDB instance. It exercises direct-page guards, wrong-step requests, first-login replacement, TOTP enrollment and replay, recovery acknowledgment and single use, and logout. Stop other Fleet development servers from the same checkout before running the test.
+Run `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build`, and `pnpm test:fleet-auth`. The auth test starts Next and an isolated MongoDB instance. It exercises direct-page guards, wrong-step requests, password strength enforcement, legacy credential compatibility, full-length Unicode passphrases, TOTP enrollment and replay, recovery acknowledgment and single use, and logout. Run the test from a separate checkout if the Fleet development server is active.
