@@ -2,10 +2,12 @@
 
 Fleet management app built with Next.js App Router, TypeScript, and shadcn UI with Mira styling. The app source lives in `src/`.
 
+See the [Fleet authentication guide](docs/authentication-api.md) for local setup, the development account seed, and authentication tests.
+
 ## Requirements
 
 - WSL2 Ubuntu, using Linux bash and Linux Node/pnpm for all commands
-- Node.js 24
+- Node.js 24.0.0 or newer, below 27.0.0. Node.js 24 is recommended for development and used in CI.
 - pnpm 12.11.2 (the version declared in `package.json`)
 - Git, for cloning the repository and installing Git hooks
 
@@ -31,9 +33,14 @@ If a check shows a Windows executable path or an application-control blocking er
 From the repository directory:
 
 ```sh
+nvm install
+nvm use
+node --version
 pnpm install --frozen-lockfile
 pnpm dev
 ```
+
+With NVM installed, `nvm install` and `nvm use` read `.nvmrc` and select Node.js 24. Other supported Node versions can be selected explicitly. pnpm rejects unsupported versions through `engines.node` and `engineStrict`.
 
 Open [Operations overview](http://localhost:3000/operations/overview). The app currently has no `/` page, so use an application route rather than the root URL.
 
@@ -94,3 +101,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development rules and [AGENTS.md](AGE
 - **Formatting fails:** run `pnpm format`, review the changes, and stage the files you intend to commit.
 - **Type checking blocks a push:** run `pnpm typecheck`, fix the reported errors, and retry.
 - **Dependency installation fails in CI:** ensure `package.json` and `pnpm-lock.yaml` are both updated using `pnpm install` and included in the same change.
+
+## Requests sidebar preview
+
+The request sidebar shows matching mock requests under each active vehicle.
+Use **Alt+Shift+Q** to toggle it. In development, try
+`?scenario=same-type` to see shared requests, or `?scenario=stress` for a busy fleet.
+See [the sidebar guide](docs/request-sidebar.md) for all seven scenarios and the
+field mapping.

@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CircleCheck } from "lucide-react";
 import QRCode from "qrcode";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { codeSchema, type CodeValues } from "@/lib/auth/schemas";
 import type { TwoFactorSetup } from "@/lib/auth/types";
 import { AuthStep, type RunAuthAction } from "./AuthStep";
@@ -12,9 +14,10 @@ import SetupRenderContent from "./SetupRenderContent";
 
 interface ISetupForm {
   run: RunAuthAction;
+  passwordChanged?: true;
 }
 
-function SetupForm({ run }: Readonly<ISetupForm>) {
+function SetupForm({ run, passwordChanged }: Readonly<ISetupForm>) {
   const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
   const [qr, setQr] = useState("");
   const [loading, setLoading] = useState(true);
@@ -91,6 +94,22 @@ function SetupForm({ run }: Readonly<ISetupForm>) {
         description="Add your fleet account to Google Authenticator, then enter a code to confirm it's ready."
       />
 
+      {passwordChanged && (
+        <Alert
+          role={undefined}
+          aria-live="polite"
+          aria-atomic="true"
+          className="rounded-md border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100"
+        >
+          <CircleCheck aria-hidden="true" />
+          <AlertTitle>Password changed successfully</AlertTitle>
+          <AlertDescription className="text-current">
+            Your new password is active. If you leave setup, use it to sign in
+            again.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {message.alert}
 
       <SetupRenderContent
@@ -111,7 +130,11 @@ function SetupForm({ run }: Readonly<ISetupForm>) {
 export function TwoFactorSetupStep() {
   return (
     <AuthStep expected="TWO_FACTOR_SETUP_REQUIRED">
-      {(_, run) => <SetupForm run={run} />}
+      {(state, run) =>
+        state.status === "TWO_FACTOR_SETUP_REQUIRED" && (
+          <SetupForm run={run} passwordChanged={state.passwordChanged} />
+        )
+      }
     </AuthStep>
   );
 }

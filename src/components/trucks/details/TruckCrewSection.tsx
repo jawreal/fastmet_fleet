@@ -25,7 +25,7 @@ export function TruckCrewSection({
           <CrewAssignment
             truck={truck}
             crew={crew}
-            role="Driver"
+            crewRole="Driver"
             onAssign={onAssign}
           />
         </div>
@@ -34,7 +34,7 @@ export function TruckCrewSection({
           <CrewAssignment
             truck={truck}
             crew={crew}
-            role="Helper"
+            crewRole="Helper"
             onAssign={onAssign}
           />
         </div>

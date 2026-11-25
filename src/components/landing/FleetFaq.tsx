@@ -29,7 +29,7 @@ const questions: Readonly<IQuestions>[] = [
   {
     question: "How do I get access?",
     answer:
-      "Ask your company administrator for your work credentials. At first sign-in, you’ll replace the temporary password, set up Google Authenticator, and save your recovery codes.",
+      "Ask your company administrator for your work credentials. At first sign-in, you’ll replace the initial password, set up Google Authenticator, and save your recovery codes.",
   },
 ];
 

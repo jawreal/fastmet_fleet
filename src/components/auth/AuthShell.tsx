@@ -16,7 +16,7 @@ export function AuthShell({ children }: Readonly<{ children: ReactNode }>) {
       >
         Skip to form
       </a>
-      <header className="flex items-center justify-between gap-4 px-6 py-4 sm:px-10 lg:px-12">
+      <header className="flex items-center justify-between gap-4 px-6 py-4 sm:px-10 lg:px-12 border-b">
         <Brand />
         <FleetThemeMenu systemLabel="Device" />
       </header>

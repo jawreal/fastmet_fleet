@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
 import { useTheme } from "next-themes";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { getAuthAdapter } from "@/lib/auth/adapter";
 import {
   ChevronsUpDownIcon,
   LogOutIcon,
@@ -55,7 +56,6 @@ export function NavUser({ company }: Readonly<ICompany>) {
     .map((word) => word[0])
     .join("");
   const { isMobile } = useSidebar();
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
     subscribe,
@@ -63,7 +63,21 @@ export function NavUser({ company }: Readonly<ICompany>) {
     () => false,
   );
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  /* For logging out */
+  const onLogout = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setLoggingOut(true);
+    try {
+      await (await getAuthAdapter()).logout();
+      window.location.replace("/login");
+    } catch {
+      toast.error("Unable to sign out. Please try again.");
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <>
@@ -74,10 +88,15 @@ export function NavUser({ company }: Readonly<ICompany>) {
               render={
                 <SidebarMenuButton
                   ref={triggerRef}
+                  data-company-menu
+                  aria-label={`${company.name} company menu`}
+                  title={company.name}
                   size="lg"
                   className={cn(
                     // 1. Layout: same sizing as before
                     "h-auto min-h-20 rounded-md px-4 py-3 transition-colors",
+                    // Override the expanded card's minimum height in the icon rail.
+                    "group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0",
 
                     // 2. Gradient: a soft fade that ends in transparent, so it blends into any sidebar bg
                     "bg-linear-to-br from-primary/15 via-primary/5 to-transparent",
@@ -99,7 +118,8 @@ export function NavUser({ company }: Readonly<ICompany>) {
                 />
               }
             >
-              <Avatar className="size-9 shrink-0 rounded-full">
+              {/* A 24px avatar fits inside the collapsed 32px button without clipping. */}
+              <Avatar className="size-9 shrink-0 rounded-full group-data-[collapsible=icon]:size-6">
                 {image && (
                   <AvatarImage
                     src={image.url}
@@ -111,7 +131,7 @@ export function NavUser({ company }: Readonly<ICompany>) {
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid min-w-0 flex-1 gap-1 text-left text-sm leading-tight">
+              <div className="grid min-w-0 flex-1 gap-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                 <span
                   className="truncate text-xs font-semibold"
                   title={company.name}
@@ -125,7 +145,7 @@ export function NavUser({ company }: Readonly<ICompany>) {
                   {company.location}
                 </span>
               </div>
-              <ChevronsUpDownIcon className="ml-auto size-4 shrink-0 text-muted-foreground" />
+              <ChevronsUpDownIcon className="ml-auto size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
             </DropdownMenuTrigger>
             <DropdownMenuContent
               className="min-w-60"
@@ -181,11 +201,8 @@ export function NavUser({ company }: Readonly<ICompany>) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => {
-                // Replace with the authentication provider's sign-out when connected.
-                setConfirmLogout(false);
-                router.replace("/");
-              }}
+              disabled={loggingOut}
+              onClick={onLogout}
             >
               <LogOutIcon />
               Log out
