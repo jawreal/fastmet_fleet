@@ -206,7 +206,7 @@ export function DriversHelpers() {
             value={query}
             onValueChange={setQuery}
           />
-          <AddCrewDialog role={role} onAdd={addPerson} />
+          <AddCrewDialog initialRole={role} onAdd={addPerson} />
         </div>
       </div>
       {notice && (

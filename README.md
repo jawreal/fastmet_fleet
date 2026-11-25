@@ -2,6 +2,8 @@
 
 Fleet management app built with Next.js App Router, TypeScript, and shadcn UI with Mira styling. The app source lives in `src/`.
 
+See the [Fleet authentication guide](docs/authentication-api.md) for local setup, the development account seed, and authentication tests.
+
 ## Requirements
 
 - WSL2 Ubuntu, using Linux bash and Linux Node/pnpm for all commands
@@ -99,3 +101,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development rules and [AGENTS.md](AGE
 - **Formatting fails:** run `pnpm format`, review the changes, and stage the files you intend to commit.
 - **Type checking blocks a push:** run `pnpm typecheck`, fix the reported errors, and retry.
 - **Dependency installation fails in CI:** ensure `package.json` and `pnpm-lock.yaml` are both updated using `pnpm install` and included in the same change.
+
+## Requests sidebar preview
+
+The request sidebar shows matching mock requests under each active vehicle.
+Use **Alt+Shift+Q** to toggle it. In development, try
+`?scenario=same-type` to see shared requests, or `?scenario=stress` for a busy fleet.
+See [the sidebar guide](docs/request-sidebar.md) for all seven scenarios and the
+field mapping.

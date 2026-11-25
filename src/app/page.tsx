@@ -61,7 +61,7 @@ const onboarding = [
   {
     title: "Get your work credentials",
     description:
-      "Your company administrator provides your work email and temporary password.",
+      "Your company administrator provides your work email and initial password.",
   },
   {
     title: "Secure your account",

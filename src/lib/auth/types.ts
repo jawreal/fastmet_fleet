@@ -1,17 +1,26 @@
-import type { LoginValues } from "./login";
+import type { LoginRequest } from "./login";
+
+export type TwoFactorSetupState = {
+  status: "TWO_FACTOR_SETUP_REQUIRED";
+  nextAction: "getTwoFactorSetup" | "confirmTwoFactorSetup";
+  expiresAt: number;
+  setupAttemptId: string;
+  passwordChanged?: true;
+};
 
 export type AuthState =
-  | { status: "SIGNED_OUT"; nextAction: "login"; reason?: "CHALLENGE_EXPIRED" }
+  | {
+      status: "SIGNED_OUT";
+      nextAction: "login";
+      reason?: "CHALLENGE_EXPIRED" | "SESSION_EXPIRED";
+    }
   | {
       status: "PASSWORD_CHANGE_REQUIRED";
       nextAction: "changePassword";
       expiresAt: number;
+      passwordTerms: readonly string[];
     }
-  | {
-      status: "TWO_FACTOR_SETUP_REQUIRED";
-      nextAction: "getTwoFactorSetup" | "confirmTwoFactorSetup";
-      expiresAt: number;
-    }
+  | TwoFactorSetupState
   | {
       status: "TWO_FACTOR_REQUIRED";
       nextAction: "verifyTwoFactor" | "verifyRecoveryCode";
@@ -23,18 +32,27 @@ export type AuthState =
       expiresAt: number;
       recoveryCodes: readonly string[];
     }
-  | { status: "AUTHENTICATED"; nextAction: "continue" };
+  | {
+      status: "AUTHENTICATED";
+      nextAction: "continue";
+      expiresAt: number;
+      sessionMode: "browser" | "seven_days";
+    };
 
 export interface TwoFactorSetup {
-  state: Extract<AuthState, { status: "TWO_FACTOR_SETUP_REQUIRED" }>;
+  state: TwoFactorSetupState;
   manualKey: string;
   provisioningUri: string;
-  demo: boolean;
 }
 
 export interface AuthAdapter {
-  login(values: LoginValues): Promise<AuthState>;
+  login(values: LoginRequest): Promise<AuthState>;
   changePassword(values: {
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<AuthState>;
+  changeAccountPassword(values: {
+    currentPassword: string;
     newPassword: string;
     confirmPassword: string;
   }): Promise<AuthState>;
@@ -54,7 +72,10 @@ export class AuthError extends Error {
       | "CODE_EXPIRED"
       | "CHALLENGE_EXPIRED"
       | "STEP_UNAVAILABLE"
-      | "UNCONNECTED",
+      | "INVALID_CREDENTIALS"
+      | "INVALID_INPUT"
+      | "RATE_LIMITED"
+      | "UNAVAILABLE",
     message: string,
   ) {
     super(message);

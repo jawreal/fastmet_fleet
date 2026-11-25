@@ -18,9 +18,13 @@ import { navigationLinks } from "@/lib/navLinks";
 
 // border-t border-sidebar-border from sidebar footer
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type SidebarProps = React.ComponentProps<typeof Sidebar> & {
+  company: { name: string; location: string };
+};
+
+export function AppSidebar({ company, ...props }: Readonly<SidebarProps>) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -31,10 +35,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <Image
                 src="/icon.png"
                 alt="FastMet icon"
+                className="shrink-0 group-data-[collapsible=icon]:size-5"
                 width={30}
                 height={30}
               />
-              <div>
+              <div className="group-data-[collapsible=icon]:hidden">
                 <span className="text-base font-semibold">FastMet</span>
                 <p className="text-muted-foreground uppercase text-xs font-mono">
                   fleet management
@@ -50,12 +55,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ))}
       </SidebarContent>
       <SidebarFooter className="mx-2 px-0 pt-1">
-        <NavUser
-          company={{
-            name: "Bayani Trucking Services",
-            location: "Km 14 MacArthur Hwy, Malinta, Valenzuela City",
-          }}
-        />
+        <NavUser company={company} />
       </SidebarFooter>
     </Sidebar>
   );

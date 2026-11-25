@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type SubmitEvent } from "react";
+import { useId, useRef, useState, type SubmitEvent } from "react";
 import { CalendarIcon, PlusIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ import {
 } from "../../lib/crewData";
 
 interface ICrewDialogProps {
-  role: CrewRole;
+  initialRole: CrewRole;
   onAdd: (person: CrewMember) => void;
 }
 
@@ -64,6 +64,7 @@ const statusOptions = ["On duty", "Off duty"].map((value) => ({
 function CrewDatePicker({ id, name }: Readonly<{ id: string; name: string }>) {
   const [date, setDate] = useState<Date>();
   const [open, setOpen] = useState(false);
+  const calendarPopup = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -87,7 +88,16 @@ function CrewDatePicker({ id, name }: Readonly<{ id: string; name: string }>) {
           <CalendarIcon data-icon="inline-start" />
           {date ? format(date, "PPP") : "Select date"}
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-auto p-0">
+        <PopoverContent
+          ref={calendarPopup}
+          align="start"
+          className="w-auto p-0"
+          initialFocus={() =>
+            calendarPopup.current?.querySelector<HTMLButtonElement>(
+              'button[data-day][tabindex="0"]',
+            ) ?? true
+          }
+        >
           <Calendar
             mode="single"
             captionLayout="dropdown"
@@ -99,7 +109,6 @@ function CrewDatePicker({ id, name }: Readonly<{ id: string; name: string }>) {
               setDate(selected);
               setOpen(false);
             }}
-            autoFocus
           />
         </PopoverContent>
       </Popover>
@@ -107,9 +116,12 @@ function CrewDatePicker({ id, name }: Readonly<{ id: string; name: string }>) {
   );
 }
 
-export function AddCrewDialog({ role, onAdd }: Readonly<ICrewDialogProps>) {
+export function AddCrewDialog({
+  initialRole,
+  onAdd,
+}: Readonly<ICrewDialogProps>) {
   const [open, setOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(role);
+  const [selectedRole, setSelectedRole] = useState(initialRole);
   const [payType, setPayType] = useState("daily");
   const id = useId();
   const fieldId = (name: string) => `${id}-${name}`;
@@ -149,14 +161,14 @@ export function AddCrewDialog({ role, onAdd }: Readonly<ICrewDialogProps>) {
       onOpenChange={(next) => {
         setOpen(next);
         if (next) {
-          setSelectedRole(role);
+          setSelectedRole(initialRole);
           setPayType("daily");
         }
       }}
     >
       <DialogTrigger render={<Button type="button" />}>
         <PlusIcon data-icon="inline-start" />
-        Add {role.toLowerCase()}
+        Add {initialRole.toLowerCase()}
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
         <DialogHeader>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { getAuthAdapter, mockAuthEnabled } from "@/lib/auth/adapter";
+import { getAuthAdapter } from "@/lib/auth/adapter";
 import {
   AuthError,
   authRoutes,
@@ -10,16 +10,13 @@ import {
   type AuthState,
 } from "@/lib/auth/types";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuthAlert } from "./AuthAlert";
 import { AuthFormSkeleton } from "./AuthFormSkeleton";
 
 interface IAuthStep {
   expected: AuthState["status"];
   children: (state: AuthState, run: RunAuthAction) => ReactNode;
 }
-
-export const demoNotice =
-  "Development demo · synthetic data only. No real session is created.";
 
 export type AuthAction = (adapter: AuthAdapter) => Promise<AuthState>;
 export type RunAuthAction = (action: AuthAction) => Promise<void>;
@@ -41,7 +38,12 @@ export function AuthStep({ expected, children }: Readonly<IAuthStep>) {
   const accept = useCallback(
     (next: AuthState) => {
       setState(next);
-      if (next.status !== expected) router.replace(authRoutes[next.status]);
+      if (next.status === expected) return;
+      if (next.status === "AUTHENTICATED" || next.status === "SIGNED_OUT") {
+        window.location.replace(authRoutes[next.status]);
+      } else {
+        router.replace(authRoutes[next.status]);
+      }
     },
     [expected, router],
   );
@@ -111,9 +113,7 @@ export function AuthStep({ expected, children }: Readonly<IAuthStep>) {
   if (error)
     return (
       <div className="space-y-4">
-        <Alert role="alert">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <AuthAlert>{error}</AuthAlert>
         <Button onClick={() => void restore()}>Try again</Button>
       </div>
     );
@@ -124,11 +124,6 @@ export function AuthStep({ expected, children }: Readonly<IAuthStep>) {
 
   return (
     <div className="w-full space-y-5">
-      {mockAuthEnabled && expected !== "SIGNED_OUT" && (
-        <p className="rounded-md border border-dashed p-3 text-xs leading-5 text-muted-foreground">
-          {demoNotice}
-        </p>
-      )}
       {children(state, run)}
       {expected !== "SIGNED_OUT" && (
         <Button

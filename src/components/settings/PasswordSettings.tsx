@@ -1,5 +1,14 @@
 "use client";
-import { useState, type SubmitEvent } from "react";
+import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormMessage } from "@/components/auth/FormParts";
+import { PasswordField } from "@/components/auth/PasswordField";
+import { getAuthAdapter } from "@/lib/auth/adapter";
+import { checkPasswordStrength } from "@/lib/auth/password-policy";
+import {
+  settingsPasswordSchema,
+  type SettingsPasswordValues,
+} from "@/lib/auth/schemas";
 import {
   Card,
   CardHeader,
@@ -9,46 +18,35 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
-export function PasswordSettings() {
-  const [showPasswords, setShowPasswords] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [error, setError] = useState("");
-  /*TAKE_NOTE: MOCK UP */
-  function changePassword(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setNotice("");
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const current = data.get("currentPassword");
-    const next = data.get("newPassword");
-    const confirm = data.get("confirmPassword");
-    if (
-      typeof current !== "string" ||
-      typeof next !== "string" ||
-      typeof confirm !== "string"
-    )
-      return;
-    if (!/[A-Z]/.test(next) || !/[a-z]/.test(next) || !/\d/.test(next)) {
-      setError("Use uppercase and lowercase letters and a number.");
-      return;
+export function PasswordSettings({
+  passwordTerms,
+}: Readonly<{ passwordTerms: readonly string[] }>) {
+  const form = useForm<SettingsPasswordValues>({
+    resolver: zodResolver(
+      settingsPasswordSchema.superRefine(checkPasswordStrength(passwordTerms)),
+    ),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+  const newPassword = useWatch({ control: form.control, name: "newPassword" });
+  const { errors, isSubmitting: busy } = form.formState;
+  const message = useFormMessage();
+
+  const changePassword: SubmitHandler<SettingsPasswordValues> = async (
+    values,
+  ) => {
+    message.clear();
+    try {
+      await (await getAuthAdapter()).changeAccountPassword(values);
+      window.location.replace("/login");
+    } catch (error) {
+      message.report(error);
     }
-    if (next !== confirm) {
-      setError("New passwords do not match.");
-      return;
-    }
-    if (current === next) {
-      setError("Choose a password different from your current password.");
-      return;
-    }
-    form.reset();
-    setNotice(
-      "Preview validated. Your password has not changed; account authentication is not connected.",
-    );
-  }
+  };
   return (
     <Card className="@container min-w-0" aria-labelledby="password-heading">
       <CardHeader>
@@ -57,71 +55,41 @@ export function PasswordSettings() {
           Change the password used to sign in to your company account.
         </CardDescription>
       </CardHeader>
-      <form onSubmit={changePassword} className="flex flex-1 flex-col gap-4">
-        <CardContent className="grid grid-cols-1 gap-5 @lg:grid-cols-2">
-          <div className="grid gap-4">
-            {[
-              {
-                id: "currentPassword",
-                label: "Current password",
-                autoComplete: "current-password",
-              },
-              {
-                id: "newPassword",
-                label: "New password",
-                autoComplete: "new-password",
-              },
-              {
-                id: "confirmPassword",
-                label: "Confirm new password",
-                autoComplete: "new-password",
-              },
-            ].map((field) => (
-              <div key={field.id} className="grid gap-2">
-                <Label htmlFor={field.id}>{field.label}</Label>
-                <Input
-                  id={field.id}
-                  name={field.id}
-                  type={showPasswords ? "text" : "password"}
-                  autoComplete={field.autoComplete}
-                  required
-                  minLength={field.id === "currentPassword" ? undefined : 12}
-                  placeholder={
-                    field.label === "New password"
-                      ? "At least 12 characters"
-                      : field.label
-                  }
-                />
-              </div>
-            ))}
-            <label className="flex items-center gap-2 text-xs">
-              <input
-                type="checkbox"
-                checked={showPasswords}
-                onChange={(event) => setShowPasswords(event.target.checked)}
-                className="accent-primary"
-              />{" "}
-              Show passwords
-            </label>
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-xs font-medium">Requirements</h3>
-            <ul className="list-disc space-y-2 pl-4 text-xs/relaxed text-muted-foreground">
-              <li>At least 12 characters</li>
-              <li>Uppercase and lowercase letters and a number</li>
-              <li>Both new passwords match</li>
-            </ul>
-          </div>
-          {error && (
-            <p role="alert" className="text-xs text-destructive">
-              {error}
-            </p>
-          )}
-          {notice && <p className="text-xs text-muted-foreground">{notice}</p>}
+      <form
+        noValidate
+        aria-busy={busy}
+        onSubmit={form.handleSubmit(changePassword)}
+        className="flex flex-1 flex-col gap-4"
+      >
+        <CardContent className="grid w-full max-w-md gap-4">
+          {message.alert}
+          <PasswordField
+            id="current-password"
+            label="Current password"
+            autoComplete="current-password"
+            registration={form.register("currentPassword")}
+            error={errors.currentPassword?.message}
+            busy={busy}
+          />
+          <PasswordField
+            id="new-password"
+            label="New password"
+            registration={form.register("newPassword")}
+            error={errors.newPassword?.message}
+            strength={{ value: newPassword, passwordTerms }}
+            busy={busy}
+          />
+          <PasswordField
+            id="confirm-password"
+            label="Confirm new password"
+            registration={form.register("confirmPassword")}
+            error={errors.confirmPassword?.message}
+            busy={busy}
+          />
         </CardContent>
         <CardFooter className="mt-auto justify-end border-t">
-          <Button type="submit" size="lg">
-            Update password
+          <Button type="submit" size="lg" disabled={busy}>
+            {busy ? "Updating…" : "Update password"}
           </Button>
         </CardFooter>
       </form>

@@ -17,19 +17,28 @@ type BookingCardProps = {
   onOffer: (booking: Booking) => void;
 };
 
-type RouteStopProps = { name: string; area: string; destination?: boolean };
+type RouteStopProps = {
+  name: string;
+  area: string;
+  destination?: boolean;
+  // Requests can show distance beside the connector without changing existing booking cards.
+  distanceKm?: number;
+  dotted?: boolean;
+};
 
 export function RouteStop({
   name,
   area,
   destination,
+  distanceKm,
+  dotted = false,
 }: Readonly<RouteStopProps>) {
   return (
     <div className="relative flex gap-3">
       {!destination && (
         <span
           aria-hidden="true"
-          className="absolute top-4 -bottom-4 left-1.5 border-l border-dashed border-primary/70"
+          className={`absolute top-4 -bottom-4 left-1.5 border-l border-primary/70 ${dotted ? "border-dotted" : "border-dashed"}`}
         />
       )}
       {destination ? (
@@ -43,9 +52,15 @@ export function RouteStop({
           className="mt-0.5 size-3.5 shrink-0 text-primary"
         />
       )}
-      <div>
+      <div className="min-w-0 wrap-anywhere">
         <p className="text-xs font-medium">{name}</p>
         {area && <p className="text-xs text-muted-foreground">{area}</p>}
+        {/* Distance is optional presentation metadata aligned beside the pickup connector. */}
+        {distanceKm !== undefined && (
+          <p className="mt-2 text-[10px] tabular-nums text-muted-foreground">
+            {distanceKm.toFixed(1)} km
+          </p>
+        )}
       </div>
     </div>
   );

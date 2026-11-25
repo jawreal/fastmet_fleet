@@ -1,19 +1,11 @@
 "use client";
 import { useCallback, useRef, useState } from "react";
-import { Eye, EyeOff, LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import type { UseFormRegisterReturn } from "react-hook-form";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-
-interface IPasswordField {
-  id: string;
-  label: string;
-  registration: UseFormRegisterReturn;
-  error?: string;
-  busy: boolean;
-}
+import { AuthAlert } from "./AuthAlert";
 
 interface ICodeField {
   registration: UseFormRegisterReturn;
@@ -64,61 +56,10 @@ export function useFormMessage() {
     requestAnimationFrame(() => ref.current?.focus());
   }, []);
 
-  const alert = message ? (
-    <Alert
-      ref={ref}
-      tabIndex={-1}
-      role="alert"
-      className="focus-visible:outline-2 focus-visible:outline-ring"
-    >
-      <AlertDescription>{message}</AlertDescription>
-    </Alert>
-  ) : null;
+  const alert = message ? <AuthAlert ref={ref}>{message}</AuthAlert> : null;
   return { report, clear: () => setMessage(""), alert };
 }
 
-export function PasswordField({
-  id,
-  label,
-  registration,
-  error,
-  busy,
-}: Readonly<IPasswordField>) {
-  const [visible, setVisible] = useState(false);
-  return (
-    <Field className="gap-2" data-invalid={!!error}>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <div className="relative">
-        <Input
-          {...registration}
-          id={id}
-          type={visible ? "text" : "password"}
-          autoComplete="new-password"
-          disabled={busy}
-          aria-invalid={!!error}
-          aria-describedby={["password-requirements", error && `${id}-error`]
-            .filter(Boolean)
-            .join(" ")}
-          className="h-11 pr-12 text-base sm:text-sm"
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-lg"
-          className="absolute top-0 right-0 size-11"
-          aria-label={`${visible ? "Hide" : "Show"} ${label.toLowerCase()}`}
-          aria-pressed={visible}
-          aria-controls={id}
-          disabled={busy}
-          onClick={() => setVisible(!visible)}
-        >
-          {visible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-        </Button>
-      </div>
-      {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
-    </Field>
-  );
-}
 export function SubmitButton({
   busy,
   children,
