@@ -36,7 +36,6 @@ export type FleetAuthenticator = {
   pendingRecovery?: string;
 };
 
-type Attempt = { _id: string; count: number; expiresAt: Date };
 let connection: ReturnType<typeof connect> | undefined;
 
 async function connect() {
@@ -50,15 +49,11 @@ async function connect() {
     await client.connect();
     const db = client.db();
     const sessions = db.collection<FleetSession>("fleetwebsessions");
-    const attempts = db.collection<Attempt>("fleetwebauthattempts");
     const turnstileUses = db.collection<{ _id: string; expiresAt: Date }>(
       "fleetwebturnstileuses",
     );
     await Promise.all([
       sessions.createIndexes([
-        { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
-      ]),
-      attempts.createIndexes([
         { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
       ]),
       turnstileUses.createIndexes([
@@ -68,7 +63,6 @@ async function connect() {
     return {
       accounts: db.collection<FleetAccount>("fleetapplications"),
       sessions,
-      attempts,
       turnstileUses,
       authenticators: db.collection<FleetAuthenticator>(
         "fleetwebauthenticators",

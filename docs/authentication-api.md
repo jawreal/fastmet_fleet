@@ -12,6 +12,12 @@ Set these server-only values in `.env.local`.
 | `FLEET_AUTH_ENCRYPTION_KEY` | Generate 32 random bytes as hex with `openssl rand -hex 32`. Keep the key stable. All app instances must use the same key to read enrolled authenticators.                                                                               |
 | `FLEET_AUTH_ORIGIN`         | Canonical Fleet origin, with no trailing slash. Optional locally if Next sees the public origin directly. Set it when deploying behind a proxy.                                                                                          |
 
+### Redis rate limits
+
+Set `REDIS_HOST`, `REDIS_PORT`, and `REDIS_PASSWORD` in Fleet's environment using the same connection values as the backend. If the Redis endpoint uses TLS, set `REDIS_TLS=true`. Fleet connects to Redis directly and uses keys under `fastmet:fleet:auth:rate-limit:` with a separate suffix for each runtime environment. A shared Redis instance should use `noeviction` so counters survive until their time window expires.
+
+Fleet uses fixed-window counters for sign-in, password changes, and authenticator or recovery codes. Redis updates the counters atomically. If Redis is unavailable, Fleet returns `503` for protected attempts. Existing MongoDB counters expire under their original TTL index while new counters start in Redis.
+
 ### Turnstile configuration
 
 Create a **Managed** widget in the Cloudflare Turnstile dashboard with the **Rest of World** region and allow Fleet's actual sign-in hostname. Copy its **site key** into `NEXT_PUBLIC_FLEET_TURNSTILE_SITE_KEY` before building Fleet. Set its **secret key** in the server environment as `FLEET_TURNSTILE_SECRET_KEY`. Set `FLEET_TURNSTILE_HOSTNAME` to the exact sign-in hostname, without a scheme, port, or path. Fleet supplies the `fleet_login` action and `interaction-only` appearance when it renders the widget. If the deployment sets a Content Security Policy, allow `https://challenges.cloudflare.com` in `script-src` and `frame-src`.
@@ -64,10 +70,10 @@ Fleet applies the same strength policy to initial password replacement and chang
 
 The DAL verifies session expiry, approved status, the current credential version, password replacement, and the enrolled authenticator before exposing dashboard data. Both the shared dashboard layout and individual pages call the guard. New private route handlers and server actions must also authenticate at their data boundary. Use `requireStep("AUTHENTICATED")` for mutations in the Fleet auth flow.
 
-The database stores hashed session tokens, AES-GCM encrypted authenticator secrets, and hashed recovery codes. An encrypted delivery copy of recovery codes exists until acknowledgment so the enrollment can be resumed. MongoDB atomically records the last accepted TOTP time step to prevent replay across sessions. Requests are throttled using MongoDB counters.
+The database stores hashed session tokens, AES-GCM encrypted authenticator secrets, and hashed recovery codes. An encrypted delivery copy of recovery codes exists until acknowledgment so the enrollment can be resumed. MongoDB atomically records the last accepted TOTP time step to prevent replay across sessions. Requests are throttled using Redis counters.
 
 Fleet checks Turnstile with Siteverify after applying the existing sign-in rate limits. The server validates the response, hostname, action, and token age. An expiring MongoDB record stores a digest of each verified token so simultaneous sign-in requests can consume it only once.
 
 ## Checks
 
-Run `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build`, and `pnpm test:fleet-auth`. The auth test starts Next and an isolated MongoDB instance. It exercises direct-page guards, wrong-step requests, password strength enforcement, legacy credential compatibility, full-length Unicode passphrases, TOTP enrollment and replay, recovery acknowledgment and single use, and logout. Run the test from a separate checkout if the Fleet development server is active.
+Run `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build`, and `pnpm test:fleet-auth`. The auth test starts Next, an isolated MongoDB instance, and an isolated Redis server. It requires `redis-server` on your PATH. It exercises rate-limit expiry, Turnstile and replay protection, password strength, TOTP enrollment, recovery codes, and logout. Run the test from a separate checkout if the Fleet development server is active.

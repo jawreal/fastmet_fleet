@@ -1,5 +1,4 @@
 import "server-only";
-import { MongoServerError } from "mongodb";
 import { AuthError, type AuthState, type TwoFactorSetupState } from "../types";
 import type { LoginRequest } from "../login";
 import { verifyLoginTurnstile } from "./turnstile";
@@ -7,6 +6,7 @@ import { assessPassword } from "../password-policy";
 import { fleetDb, type FleetAccount, type FleetSession } from "./db";
 import { digest, unseal } from "./crypto";
 import { hashPassword, verifyPassword } from "./password";
+import { throttle } from "./rateLimit";
 import {
   authenticatedState,
   companyPasswordTerms,
@@ -20,36 +20,6 @@ import {
 export type StepContext = NonNullable<
   Awaited<ReturnType<typeof readFleetSession>>
 >;
-
-export async function throttle(key: string, limit: number, windowMs: number) {
-  const { attempts } = await fleetDb();
-  const expiresAt = new Date(
-    (Math.floor(Date.now() / windowMs) + 1) * windowMs,
-  );
-  const _id = digest(key + ":" + expiresAt.toISOString());
-  const counter = await attempts
-    .findOneAndUpdate(
-      { _id },
-      { $inc: { count: 1 }, $setOnInsert: { expiresAt } },
-      { upsert: true, returnDocument: "after" },
-    )
-    .catch((error: unknown) => {
-      if (error instanceof MongoServerError && error.code === 11000) {
-        return attempts.findOneAndUpdate(
-          { _id },
-          { $inc: { count: 1 } },
-          { returnDocument: "after" },
-        );
-      }
-      throw error;
-    });
-  if (!counter || counter.count > limit) {
-    throw new AuthError(
-      "RATE_LIMITED",
-      "Too many attempts. Please try again later.",
-    );
-  }
-}
 
 function requireTransition(session: FleetSession | null) {
   if (!session)

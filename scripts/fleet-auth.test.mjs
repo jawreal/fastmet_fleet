@@ -6,6 +6,7 @@ import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 import { test } from "node:test";
 import bcrypt from "bcryptjs";
+import { Redis } from "ioredis";
 import { MongoClient } from "mongodb";
 import { MongoMemoryServer } from "mongodb-memory-server-core";
 import { TOTP, URI } from "otpauth";
@@ -23,7 +24,66 @@ async function freePort() {
   return port;
 }
 
-async function startApp(t, uri) {
+async function startRedis(t) {
+  const port = await freePort();
+  const password = randomBytes(24).toString("hex");
+  const child = spawn(
+    "redis-server",
+    [
+      "--bind",
+      "127.0.0.1",
+      "--port",
+      String(port),
+      "--requirepass",
+      password,
+      "--save",
+      "",
+      "--appendonly",
+      "no",
+    ],
+    { stdio: ["ignore", "pipe", "inherit"] },
+  );
+  const exited = once(child, "close").catch(() => {});
+  const ready = new Promise((resolve, reject) => {
+    child.once("error", (error) =>
+      reject(
+        new Error("Fleet auth tests require redis-server on PATH.", {
+          cause: error,
+        }),
+      ),
+    );
+    child.once("exit", () =>
+      reject(new Error("The Fleet test Redis server exited.")),
+    );
+    let output = "";
+    child.stdout.on("data", (chunk) => {
+      output += chunk.toString();
+      if (output.includes("Ready to accept connections")) resolve();
+    });
+  });
+  const client = new Redis({
+    host: "127.0.0.1",
+    port,
+    password,
+    lazyConnect: true,
+    retryStrategy: () => null,
+  });
+  async function stop() {
+    client.disconnect();
+    child.kill();
+    await exited;
+  }
+  t.after(stop);
+  await Promise.race([
+    ready,
+    delay(5000, null, { ref: false }).then(() => {
+      throw new Error("The Fleet test Redis server did not start.");
+    }),
+  ]);
+  return { port, password, client, stop };
+}
+
+async function startApp(t, uri, redis) {
   const port = await freePort();
   const origin = "http://127.0.0.1:" + port;
   const siteverifyMock = new URL(
@@ -53,6 +113,10 @@ async function startApp(t, uri) {
         FLEET_MONGODB_URI: uri,
         FLEET_AUTH_ORIGIN: origin,
         FLEET_AUTH_ENCRYPTION_KEY: randomBytes(32).toString("hex"),
+        REDIS_HOST: "127.0.0.1",
+        REDIS_PORT: String(redis.port),
+        REDIS_PASSWORD: redis.password,
+        REDIS_TLS: "false",
         FLEET_TURNSTILE_SECRET_KEY: "mock-siteverify-secret",
         FLEET_TURNSTILE_HOSTNAME: "127.0.0.1",
       },
@@ -143,7 +207,7 @@ async function assertRedirect(browser, destination) {
   );
 }
 
-async function assertTurnstileProtection(origin, db) {
+async function assertTurnstileProtection(origin, db, redis) {
   const account = await createDevelopmentAccount(db);
   const credentials = {
     email: account.companyEmail,
@@ -199,14 +263,25 @@ async function assertTurnstileProtection(origin, db) {
     ...credentials,
     email: "rate-limit-test@example.com",
   };
-  for (const _ of Array(10)) {
-    await requestState(
-      browser,
-      "login",
-      { ...limitedCredentials, turnstileToken: "invalid-token" },
-      400,
-    );
-  }
+  const windowMs = 15 * 60_000;
+  const windowEnd = (Math.floor(Date.now() / windowMs) + 1) * windowMs;
+  const rateKey =
+    "fastmet:fleet:auth:rate-limit:development:" +
+    createHash("sha256")
+      .update("login:" + limitedCredentials.email + ":" + windowEnd)
+      .digest("hex");
+  const limitedInput = {
+    ...limitedCredentials,
+    turnstileToken: "invalid-token",
+  };
+  await requestState(browser, "login", limitedInput, 400);
+  const initialTtl = await redis.pttl(rateKey);
+  assert.ok(initialTtl > 0 && initialTtl <= windowMs);
+  await Promise.all(
+    Array.from({ length: 9 }, () =>
+      requestState(browser, "login", limitedInput, 400),
+    ),
+  );
   const limited = await requestState(
     browser,
     "login",
@@ -214,6 +289,8 @@ async function assertTurnstileProtection(origin, db) {
     429,
   );
   assert.equal(limited.body.error.code, "RATE_LIMITED");
+  assert.equal(await redis.get(rateKey), "11");
+  assert.ok((await redis.pttl(rateKey)) <= initialTtl);
 }
 
 test("development seeding rejects production and unapproved MongoDB hosts", () => {
@@ -248,10 +325,11 @@ test(
     const initialPassword = "qwerty";
     const initialHash = await bcrypt.hash(initialPassword, 12);
     await accounts.updateOne({ _id: id }, { $set: { password: initialHash } });
-    const origin = await startApp(t, uri);
+    const redis = await startRedis(t);
+    const origin = await startApp(t, uri, redis);
     await t.test(
       "Turnstile verifies sign-ins, prevents replay, and runs after rate limiting",
-      () => assertTurnstileProtection(origin, db),
+      () => assertTurnstileProtection(origin, db, redis.client),
     );
     const browser = client(origin);
     const email = companyEmail;
@@ -480,5 +558,25 @@ test(
     assert.notEqual(profile.secret, setup.manualKey);
     assert.equal(Object.hasOwn(profile, "pendingRecovery"), false);
     assert.ok(!profile.recoveryHashes.includes(recoveryCode));
+
+    await t.test(
+      "Fleet sign-in fails closed while Redis is unavailable",
+      async () => {
+        await redis.stop();
+        const result = await requestState(
+          client(origin),
+          "login",
+          {
+            email,
+            password: anotherPassword,
+            keepSignedIn: false,
+            turnstileToken: "invalid-token",
+          },
+          503,
+        );
+        assert.equal(result.body.error.code, "UNAVAILABLE");
+        assert.match(result.body.error.message, /sign-in protection/i);
+      },
+    );
   },
 );
