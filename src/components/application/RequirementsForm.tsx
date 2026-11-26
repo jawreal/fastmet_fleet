@@ -329,7 +329,7 @@ export function RequirementsForm({
                         selected ? "requirement-details" : undefined
                       }
                       onClick={() => setSelectedField(field)}
-                      className="flex w-full items-center gap-2.5 rounded-[10px] border border-transparent p-2.5 text-left hover:bg-secondary aria-[current=true]:border-input aria-[current=true]:bg-accent"
+                      className="flex w-full items-center gap-2.5 rounded-[10px] border border-transparent p-2.5 text-left hover:bg-secondary aria-current:border-input aria-current:bg-accent"
                     >
                       <Icon
                         aria-hidden="true"
