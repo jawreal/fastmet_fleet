@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { RequirementsForm } from "@/components/application/RequirementsForm";
 import {
-  RefreshRequirementsButton,
-  RequirementsSignOutButton,
+  RetryRequirementsButton,
+  RequirementsHeader,
 } from "@/components/application/RequirementsControls";
-import { Brand } from "@/components/auth/Brand";
-import { FleetThemeMenu } from "@/components/FleetThemeMenu";
 import { loadFleetRequirements } from "@/lib/application/backend";
 import { requireOnboardingAccess } from "@/lib/auth/server/dal";
+import "@/components/application/requirements-workspace.css";
 
 export const metadata: Metadata = {
   title: "Application requirements | FastMet Fleet",
@@ -17,41 +16,31 @@ export const metadata: Metadata = {
 async function Workspace() {
   const { account } = await requireOnboardingAccess();
   const application = await loadFleetRequirements();
+  if (application) {
+    // A new review round or status starts a fresh replacement form.
+    return (
+      <RequirementsForm
+        key={`${application.round}-${application.status}`}
+        application={application}
+        companyName={account.companyName}
+      />
+    );
+  }
+
   return (
-    <>
-      <header className="border-b">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-          <Brand />
-          <div className="flex items-center gap-2">
-            <FleetThemeMenu />
-            <RequirementsSignOutButton />
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">{account.companyName}</p>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Application requirements
-          </h1>
-        </div>
-        {/* A new review round or status starts a fresh replacement form. */}
-        {application ? (
-          <RequirementsForm
-            key={`${application.round}-${application.status}`}
-            application={application}
-          />
-        ) : (
-          <div className="space-y-3">
-            <p role="alert" className="text-sm">
-              We couldn’t load your requirements. Refresh to check the current
-              status.
-            </p>
-            <RefreshRequirementsButton />
-          </div>
-        )}
+    <div className="requirements-workspace">
+      <RequirementsHeader />
+      <main className="mx-auto max-w-[1040px] space-y-3 px-4 pt-10 pb-16">
+        <p className="text-sm text-muted-foreground">{account.companyName}</p>
+        <h1 className="text-xl font-semibold tracking-tight">
+          Application requirements
+        </h1>
+        <p role="alert" className="text-sm">
+          We couldn’t load your requirements.
+        </p>
+        <RetryRequirementsButton />
       </main>
-    </>
+    </div>
   );
 }
 

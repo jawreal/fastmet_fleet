@@ -1,11 +1,15 @@
 import "server-only";
 import { readFleetSessionToken } from "@/lib/auth/server/dal";
-import { requirementsSchema } from "./requirements";
+import { requirementsSchema, type RequirementField } from "./requirements";
 
 type UploadRequest = RequestInit & { duplex?: "half" };
+type RequirementsPath =
+  | "/me"
+  | "/me/resubmit"
+  | `/me/documents/${RequirementField}?revision=${number}`;
 
 export async function fetchFleetRequirements(
-  path: "/me" | "/me/resubmit",
+  path: RequirementsPath,
   init: UploadRequest = {},
 ) {
   const origin = process.env.FLEET_BACKEND_URL;

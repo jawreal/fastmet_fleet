@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { createServer as createHttpServer } from "node:http";
 import { once } from "node:events";
@@ -156,6 +157,7 @@ async function startApp(t, uri, redis, backendUrl) {
 
 async function startRequirementsFixture(t, db) {
   const submissions = [];
+  const logo = await readFile(new URL("../public/icon.png", import.meta.url));
   const server = createHttpServer(async (request, response) => {
     try {
       const token = request.headers.authorization?.split(" ")[1] ?? "";
@@ -168,6 +170,13 @@ async function startRequirementsFixture(t, db) {
         .findOne({ _id: session?.accountId });
       if (!session || !application) {
         response.writeHead(401).end();
+        return;
+      }
+
+      if (
+        request.url === "/api/fleet/applications/me/documents/logo?revision=1"
+      ) {
+        response.writeHead(200, { "Content-Type": "image/png" }).end(logo);
         return;
       }
 
@@ -210,6 +219,13 @@ async function startRequirementsFixture(t, db) {
                   ? "Upload a current government ID."
                   : undefined,
             },
+            {
+              field: "logo",
+              originalName: "icon.png",
+              revision: 1,
+              status: "approved",
+              canPreview: true,
+            },
           ],
         }),
       );
@@ -220,7 +236,11 @@ async function startRequirementsFixture(t, db) {
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   t.after(() => new Promise((resolve) => server.close(resolve)));
-  return { url: "http://127.0.0.1:" + server.address().port, submissions };
+  return {
+    url: "http://127.0.0.1:" + server.address().port,
+    submissions,
+    logo,
+  };
 }
 
 function client(origin) {
@@ -411,6 +431,9 @@ test(
       () => assertTurnstileProtection(origin, db, redis.client),
     );
     const browser = client(origin);
+    const logoPath =
+      "/api/fleet/application/requirements?field=logo&revision=1";
+    assert.equal((await browser.request(logoPath)).status, 401);
     const email = companyEmail;
     const newPassword =
       "  🧭 café lantern 🐙 otoño basket 🎨 café orchard 🌱 mellow river 🐋 ";
@@ -516,6 +539,7 @@ test(
       await requestState(browser, "two-factor/confirm", { code })
     ).body;
     assert.equal(enrolled.status, "RECOVERY_CODES_REQUIRED");
+    assert.equal((await browser.request(logoPath)).status, 401);
     assert.equal(enrolled.recoveryCodes.length, 8);
     await assertRedirect(browser, "/two-factor/recovery-codes");
 
@@ -528,6 +552,15 @@ test(
     assert.equal(complete.body.sessionMode, "seven_days");
     assert.match(complete.headers.get("set-cookie"), /Expires=/i);
     assert.equal(complete.body.destination, "/application/requirements");
+    const logo = await browser.request(logoPath);
+    assert.equal(logo.status, 200);
+    assert.equal(logo.headers.get("content-type"), "image/png");
+    assert.equal(logo.headers.get("cache-control"), "no-store");
+    assert.equal(
+      logo.headers.get("cross-origin-resource-policy"),
+      "same-origin",
+    );
+    assert.deepEqual(Buffer.from(await logo.arrayBuffer()), backend.logo);
     await assertRedirect(browser, "/application/requirements");
     const blockedUpload = await browser.request(
       "/api/fleet/application/requirements",

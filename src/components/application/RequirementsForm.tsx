@@ -1,161 +1,146 @@
 "use client";
 
-import Image from "next/image";
+import { CircleAlert, CircleArrowUp, CircleCheck, Clock3 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type SubmitEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  maxRequirementBytes,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import {
   requirementLabels,
   requirementsApi,
+  type Requirement,
   type RequirementField,
   type Requirements,
 } from "@/lib/application/requirements";
-import { RefreshRequirementsButton } from "./RequirementsControls";
+import {
+  RequirementDetails,
+  requirementStatuses,
+  type RequirementDisplayStatus,
+  type StagedReplacement,
+} from "./RequirementDetails";
+import { RequirementsHeader } from "./RequirementsControls";
 
-const statuses = {
-  approved: "Approved",
-  pending: "Awaiting review",
-  needs_update: "Needs correction",
+const statusIcons = {
+  approved: CircleCheck,
+  pending: Clock3,
+  needs_update: CircleAlert,
+  staged: CircleArrowUp,
 };
+
 const uploadErrorSchema = z.object({
   message: z.string(),
   errors: z.record(z.string(), z.string()).optional(),
 });
 
-function ReplacementInput({
-  field,
-  error,
-}: Readonly<{ field: RequirementField; error?: string }>) {
-  const input = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<{ type: string; url: string }>();
-  const [validation, setValidation] = useState("");
-  const id = `replacement-${field}`;
-  const message = validation || error;
-  const imagesOnly = field === "logo";
-  const errorIdSuffix = message ? ` ${id}-error` : "";
-
-  useEffect(() => {
-    // Release the local preview when the file changes or the input unmounts.
-    if (preview) return () => URL.revokeObjectURL(preview.url);
-  }, [preview]);
-
-  return (
-    <div className="space-y-2 sm:max-w-md">
-      <label htmlFor={id} className="block text-sm font-medium">
-        Replacement for {requirementLabels[field]}
-      </label>
-      <Input
-        ref={input}
-        id={id}
-        name={field}
-        type="file"
-        required
-        accept={imagesOnly ? ".jpg,.jpeg,.png" : ".jpg,.jpeg,.png,.pdf"}
-        aria-invalid={!!message}
-        aria-describedby={`${id}-help${errorIdSuffix}`}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          setValidation("");
-          setPreview(undefined);
-          if (!file) return;
-          const extension = imagesOnly
-            ? /\.(?:jpe?g|png)$/i
-            : /\.(?:jpe?g|png|pdf)$/i;
-          if (
-            !extension.test(file.name) ||
-            file.size === 0 ||
-            file.size > maxRequirementBytes
-          ) {
-            event.target.value = "";
-            setValidation(
-              "Choose an allowed file type between 1 byte and 10 MB.",
-            );
-            return;
-          }
-          setPreview({ type: file.type, url: URL.createObjectURL(file) });
-        }}
-      />
-      <p id={`${id}-help`} className="text-xs text-muted-foreground">
-        {imagesOnly ? "JPG or PNG" : "JPG, PNG or PDF"}, up to 10 MB.
-      </p>
-      {message && (
-        <p id={`${id}-error`} role="alert" className="text-sm text-destructive">
-          {message}
-        </p>
-      )}
-      {preview && (
-        <div className="flex flex-wrap items-center gap-2">
-          {["image/jpeg", "image/png"].includes(preview.type) && (
-            <Image
-              unoptimized
-              src={preview.url}
-              alt={`Selected replacement for ${requirementLabels[field]}`}
-              width={96}
-              height={72}
-              className="max-h-20 w-auto rounded-sm border object-contain"
-            />
-          )}
-          {preview.type === "application/pdf" && (
-            <a
-              className="text-sm underline"
-              href={preview.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Preview selected PDF
-            </a>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            type="button"
-            onClick={() => {
-              if (input.current) input.current.value = "";
-              setPreview(undefined);
-              input.current?.focus();
-            }}
-          >
-            Remove replacement
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
+type Replacements = Partial<Record<RequirementField, StagedReplacement>>;
 
 export function RequirementsForm({
   application,
-}: Readonly<{ application: Requirements }>) {
+  companyName,
+}: Readonly<{ application: Requirements; companyName: string }>) {
   const router = useRouter();
+  const { documents, round } = application;
+  const waitingForReview = application.status === "under_review";
+  const flagged = documents.filter(({ status }) => status === "needs_update");
+  const [selectedField, setSelectedField] = useState(
+    () =>
+      flagged[0]?.field ??
+      documents.find(({ status }) => status === "pending")?.field ??
+      documents[0]?.field,
+  );
+  const [replacements, setReplacements] = useState<Replacements>({});
   const [error, setError] = useState<z.infer<typeof uploadErrorSchema>>();
-  const form = useRef<HTMLFormElement>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const inFlight = useRef(false);
-  const dialog = useRef<HTMLDialogElement>(null);
   const cancel = useRef<HTMLButtonElement>(null);
-  const waiting = submitted || application.status === "under_review";
-  const flagged = application.documents.filter(
-    (document) => document.status === "needs_update" && document.reason,
-  );
-  const approved = application.documents.filter(
-    (doc) => doc.status === "approved",
-  ).length;
-  // Send the revisions with the review round so the backend can reject stale replacements.
-  const revisions = Object.fromEntries(
-    flagged.map(({ field, revision }) => [field, revision]),
-  );
+  const previewUrls = useRef(new Map<RequirementField, string>());
 
-  async function submit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (inFlight.current || waiting || !form.current || !flagged.length) return;
-    // Read the files before the sending state disables their inputs.
-    const body = new FormData(form.current);
-    dialog.current?.close();
+  useEffect(() => {
+    const urls = previewUrls.current;
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.clear();
+    };
+  }, []);
+
+  const selected = documents.find(({ field }) => field === selectedField);
+  const waiting = waitingForReview || submitted;
+  const approved = documents.filter(
+    ({ status }) => status === "approved",
+  ).length;
+  const canReplace =
+    !waiting &&
+    flagged.length > 0 &&
+    flagged.every(({ reason }) => !!reason?.trim());
+  const ready = flagged.filter(
+    ({ field }) => replacements[field] && !error?.errors?.[field],
+  ).length;
+  const outstanding = flagged.length - ready;
+  const allReady = outstanding === 0;
+  const canSubmit = canReplace && allReady && !sending;
+  const readyCount = `${ready} of ${flagged.length}`;
+
+  function displayStatus(document: Requirement): RequirementDisplayStatus {
+    if (submitted && document.status === "needs_update") return "pending";
+    if (
+      !waiting &&
+      replacements[document.field] &&
+      !error?.errors?.[document.field]
+    )
+      return "staged";
+    return document.status;
+  }
+
+  function stageReplacement(field: RequirementField, file?: File) {
+    const urls = previewUrls.current;
+    const previousUrl = urls.get(field);
+    if (previousUrl) URL.revokeObjectURL(previousUrl);
+    urls.delete(field);
+
+    let replacement: StagedReplacement | undefined;
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      urls.set(field, previewUrl);
+      replacement = { file, previewUrl };
+    }
+    setReplacements((previous) => ({ ...previous, [field]: replacement }));
+    if (error?.errors?.[field]) {
+      const errors = { ...error.errors };
+      delete errors[field];
+      setError(Object.keys(errors).length ? { ...error, errors } : undefined);
+    }
+  }
+
+  async function submit() {
+    if (!canSubmit || inFlight.current) return;
+
+    const revisions: Partial<Record<RequirementField, number>> = {};
+    const body = new FormData();
+    for (const { field, revision } of flagged) {
+      const file = replacements[field]?.file;
+      if (!file) return;
+      body.set(field, file);
+      revisions[field] = revision;
+    }
+    body.set("round", String(round));
+    body.set("revisions", JSON.stringify(revisions));
+
     inFlight.current = true;
+    setConfirmOpen(false);
     setSending(true);
     setError(undefined);
     try {
@@ -167,13 +152,19 @@ export function RequirementsForm({
         setError(
           payload.data ?? {
             message:
-              "Unable to submit your replacements. Check the files and try again.",
+              "Unable to submit your corrections. Check the files and try again.",
           },
         );
+        const failed = flagged.find(
+          ({ field }) => payload.data?.errors?.[field],
+        );
+        if (failed) setSelectedField(failed.field);
         return;
       }
-      // Show the waiting state immediately while the server refreshes the review details.
       setSubmitted(true);
+      previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+      previewUrls.current.clear();
+      setReplacements({});
       router.refresh();
     } catch {
       setError({
@@ -186,160 +177,212 @@ export function RequirementsForm({
     }
   }
 
+  const correctionSummary = canReplace ? (
+    <section
+      aria-labelledby="corrections-title"
+      aria-busy={sending}
+      className="mt-1 flex flex-col gap-3 border-t pt-4"
+    >
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error.message}
+        </p>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          className="min-w-0 flex-1 space-y-1"
+        >
+          <h2
+            id="corrections-title"
+            className="flex items-center gap-2 text-[13px] font-semibold"
+          >
+            {allReady && (
+              <CircleCheck
+                aria-hidden="true"
+                strokeWidth={2}
+                className="size-4 shrink-0 text-primary-foreground dark:text-primary"
+              />
+            )}
+            {allReady ? "All corrections ready" : "Required corrections"}
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            {allReady
+              ? `${readyCount} replacements ready for submission.`
+              : `${readyCount} replacements ready · ${outstanding} remaining`}
+          </p>
+        </div>
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogTrigger
+            render={
+              <Button
+                type="button"
+                size="lg"
+                className="h-9 rounded-[8px] px-4 text-[13px] font-semibold disabled:pointer-events-auto disabled:cursor-not-allowed max-[480px]:w-full"
+                disabled={!canSubmit}
+              />
+            }
+          >
+            {sending ? "Submitting…" : "Submit corrections"}
+          </AlertDialogTrigger>
+          <AlertDialogContent
+            initialFocus={cancel}
+            className="requirements-dialog w-[calc(100%-2rem)]"
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Submit corrections for review?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Your{" "}
+                {ready === 1
+                  ? "replacement will"
+                  : `${ready} replacements will`}{" "}
+                be submitted in one batch. You’ll be able to upload files again
+                if we request further corrections.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel ref={cancel}>Cancel</AlertDialogCancel>
+              <AlertDialogAction type="button" onClick={() => void submit()}>
+                Confirm submission
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+      {!allReady && (
+        <Progress
+          aria-labelledby="corrections-title"
+          aria-valuetext={`${readyCount} replacements ready`}
+          max={flagged.length}
+          value={ready}
+          className="**:data-[slot=progress-track]:rounded-full **:data-[slot=progress-indicator]:rounded-full"
+        />
+      )}
+    </section>
+  ) : null;
+
   return (
-    <>
-      <output className="sr-only">
-        {submitted ? "Updated requirements received." : ""}
-      </output>
-      <section
-        aria-labelledby="requirement-status"
-        className="space-y-2 border-y py-4"
-      >
-        <h2 id="requirement-status" className="font-semibold">
-          {waiting ? "Awaiting review" : "Action required"}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {waiting
-            ? "Your updated requirements were received. We’ll email you once a decision has been made."
-            : "Replace each flagged document so we can finish verifying your application and grant access to Fleet operations."}
-        </p>
-        <label htmlFor="requirements-progress" className="block text-sm">
-          {approved} of {application.documents.length} approved
-          {!waiting && ` · ${flagged.length} require correction`}
-        </label>
-        <progress
-          id="requirements-progress"
-          max={application.documents.length}
-          value={approved}
-          className="w-full accent-primary"
-        />
-        <p className="text-sm text-muted-foreground">
-          Review round {application.round + Number(submitted)}
-        </p>
-      </section>
-      <form
-        ref={form}
-        action={requirementsApi}
-        method="post"
-        encType="multipart/form-data"
-        aria-labelledby="requirements-heading"
-        onChange={(event) => {
-          if (
-            !(event.target instanceof HTMLInputElement) ||
-            !error?.errors?.[event.target.name]
-          )
-            return;
-          setError({
-            ...error,
-            errors: { ...error.errors, [event.target.name]: "" },
-          });
-        }}
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!flagged.length || waiting || inFlight.current) return;
-          dialog.current?.showModal();
-          cancel.current?.focus();
-        }}
-      >
-        <input type="hidden" name="round" value={application.round} />
-        <input
-          type="hidden"
-          name="revisions"
-          value={JSON.stringify(revisions)}
-        />
-        <h2 id="requirements-heading" className="font-medium">
-          Required documents
-        </h2>
-        <fieldset disabled={sending}>
-          <legend className="sr-only">
-            Application documents and replacements
-          </legend>
-          <ul className="divide-y border-b">
-            {application.documents.map(
-              ({ field, status, originalName, revision, reason }) => {
-                const needsReplacement = status === "needs_update" && !!reason;
-                const displayStatus =
-                  submitted && needsReplacement ? "pending" : status;
+    <div className="requirements-workspace">
+      <RequirementsHeader
+        hasReplacements={Object.values(replacements).some(Boolean)}
+        submitting={sending}
+      />
+      <main className="mx-auto max-w-[1040px] px-4 pt-10 pb-16">
+        <div>
+          <p className="wrap-anywhere text-xs text-muted-foreground">
+            {companyName}
+          </p>
+          <h1 className="mt-1 text-xl leading-tight font-semibold tracking-tight">
+            Application requirements
+          </h1>
+          <p className="mt-1 max-w-2xl text-[13px] text-muted-foreground">
+            {waiting
+              ? "Your updated requirements are awaiting review. We’ll email you when a decision is made."
+              : "Replace the flagged documents, then submit them together for review."}
+          </p>
+        </div>
+        <output className="sr-only">
+          {submitted ? "Corrections submitted for review." : ""}
+        </output>
+        <div className="mt-6 flex flex-wrap items-start gap-4">
+          <nav
+            aria-label="Documents"
+            className="max-w-[320px] flex-[1_1_280px] rounded-[16px] border bg-card p-2 max-[789px]:max-w-none"
+          >
+            <div className="flex flex-col gap-2 px-2 pt-2 pb-3">
+              <h2
+                id="requirements-heading"
+                className="text-[13px] font-semibold"
+              >
+                Documents
+              </h2>
+              <p
+                id="requirements-progress-label"
+                className="text-xs text-muted-foreground"
+              >
+                {approved} of {documents.length} approved
+              </p>
+              <Progress
+                aria-labelledby="requirements-progress-label"
+                value={approved}
+                max={documents.length || 1}
+                className="**:data-[slot=progress-track]:rounded-full **:data-[slot=progress-indicator]:rounded-full"
+              />
+            </div>
+            <ul className="flex list-none flex-col gap-1">
+              {documents.map((document) => {
+                const { field, originalName } = document;
+                const status = displayStatus(document);
+                const Icon = statusIcons[status];
+                const { label, text } = requirementStatuses[status];
                 return (
-                  <li key={field} className="space-y-3 py-4">
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                      <h3 className="font-medium">
-                        {requirementLabels[field]}
-                      </h3>
-                      <span className="text-sm">{statuses[displayStatus]}</span>
-                    </div>
-                    {originalName && !(submitted && needsReplacement) && (
-                      <p className="wrap-break-word text-sm text-muted-foreground">
-                        {originalName} · Revision {revision}
-                      </p>
-                    )}
-                    {!waiting && needsReplacement && (
-                      <>
-                        <p className="wrap-break-word whitespace-pre-wrap text-sm">
-                          {reason}
-                        </p>
-                        <ReplacementInput
-                          field={field}
-                          error={error?.errors?.[field]}
-                        />
-                      </>
-                    )}
+                  <li key={field}>
+                    <button
+                      type="button"
+                      aria-current={
+                        selectedField === field ? "true" : undefined
+                      }
+                      aria-controls={
+                        selected ? "requirement-details" : undefined
+                      }
+                      onClick={() => setSelectedField(field)}
+                      className="flex w-full items-center gap-2.5 rounded-[10px] border border-transparent p-2.5 text-left hover:bg-secondary aria-[current=true]:border-input aria-[current=true]:bg-accent"
+                    >
+                      <Icon
+                        aria-hidden="true"
+                        strokeWidth={2}
+                        className={`size-4 shrink-0 ${text}`}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[13px] leading-[1.35] font-semibold">
+                          {field === "repGovernmentId"
+                            ? "Government ID"
+                            : requirementLabels[field]}
+                        </span>
+                        <span
+                          className={`block truncate text-[11px] leading-[1.4] ${status === "approved" ? "text-muted-foreground dark:text-[#8f8f8f]" : text}`}
+                        >
+                          {status === "approved" && originalName
+                            ? originalName
+                            : label}
+                        </span>
+                      </span>
+                    </button>
                   </li>
                 );
-              },
-            )}
-          </ul>
-        </fieldset>
-        <div className="mt-4 flex flex-wrap gap-3">
-          {!waiting && flagged.length > 0 && (
-            <Button type="submit" disabled={sending}>
-              {sending ? "Submitting…" : "Submit replacements"}
-            </Button>
-          )}
-          <RefreshRequirementsButton />
-        </div>
-        {!waiting && flagged.length === 0 && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Replacement instructions are unavailable. Refresh to check the
-            current status.
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="mt-2 text-sm text-destructive">
-            {error.message}
-          </p>
-        )}
-      </form>
-      <dialog
-        ref={dialog}
-        aria-labelledby="replacement-confirm-title"
-        aria-describedby="replacement-confirm-text"
-        className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md overscroll-contain rounded-lg border bg-card p-5 text-card-foreground backdrop:overflow-hidden backdrop:overscroll-contain backdrop:bg-black/50"
-      >
-        <form className="space-y-4" onSubmit={(event) => void submit(event)}>
-          <h1 id="replacement-confirm-title" className="font-semibold">
-            Submit replacement documents?
-          </h1>
-          <p
-            id="replacement-confirm-text"
-            className="text-sm text-muted-foreground"
-          >
-            We’ll review the replacements together. You can upload files again
-            if we request further corrections.
-          </p>
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button
-              ref={cancel}
-              type="button"
-              variant="outline"
-              onClick={() => dialog.current?.close()}
+              })}
+            </ul>
+          </nav>
+
+          {selected ? (
+            <RequirementDetails
+              key={selected.field}
+              document={selected}
+              status={displayStatus(selected)}
+              editable={
+                canReplace && !sending && selected.status === "needs_update"
+              }
+              replacement={replacements[selected.field]}
+              error={error?.errors?.[selected.field]}
+              onReplacement={(file) => stageReplacement(selected.field, file)}
             >
-              Cancel
-            </Button>
-            <Button type="submit">Confirm submission</Button>
-          </div>
-        </form>
-      </dialog>
-    </>
+              {correctionSummary}
+              {!waiting && !canReplace && (
+                <output className="border-t pt-4 text-xs text-muted-foreground">
+                  Replacement instructions are unavailable.
+                </output>
+              )}
+            </RequirementDetails>
+          ) : (
+            <p className="flex-[999_1_460px] rounded-[16px] border bg-card p-4 text-xs text-muted-foreground">
+              No documents are available.
+            </p>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }

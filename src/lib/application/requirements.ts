@@ -25,6 +25,7 @@ export const requirementsSchema = z.object({
       field: z.enum(requirementFields),
       originalName: z.string().optional(),
       revision: z.number().int().positive(),
+      canPreview: z.boolean().optional(),
       status: z.enum(["pending", "approved", "needs_update"]),
       reason: z.string().optional(),
     }),

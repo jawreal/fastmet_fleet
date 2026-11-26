@@ -14,6 +14,63 @@ function error(message: string, status: number) {
   return NextResponse.json({ message }, { status, headers: noStore });
 }
 
+export async function GET(request: NextRequest) {
+  const headers = {
+    ...noStore,
+    "Cross-Origin-Resource-Policy": "same-origin",
+    "X-Content-Type-Options": "nosniff",
+  };
+  const { searchParams } = request.nextUrl;
+  const field = requirementFields.find(
+    (name) => name === searchParams.get("field"),
+  );
+  const revisionParam = searchParams.get("revision") ?? "";
+  const revision = Number(revisionParam);
+  if (
+    !field ||
+    !/^[1-9]\d*$/.test(revisionParam) ||
+    !Number.isSafeInteger(revision)
+  ) {
+    return new NextResponse(null, { status: 404, headers });
+  }
+
+  try {
+    const context = await readFleetSession();
+    if (context?.session.status !== "AUTHENTICATED") {
+      return new NextResponse(null, { status: 401, headers });
+    }
+    if (
+      context.account.status !== "needs_update" &&
+      context.account.status !== "under_review"
+    ) {
+      return new NextResponse(null, { status: 403, headers });
+    }
+
+    const response = await fetchFleetRequirements(
+      `/me/documents/${field}?revision=${revision}`,
+      {
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(35_000)]),
+      },
+    );
+    if ([401, 403, 404].includes(response.status)) {
+      return new NextResponse(null, { status: response.status, headers });
+    }
+    const contentType = response.headers.get("Content-Type");
+    if (
+      response.ok &&
+      response.body &&
+      (contentType === "image/png" || contentType === "image/jpeg")
+    ) {
+      return new NextResponse(response.body, {
+        headers: { ...headers, "Content-Type": contentType },
+      });
+    }
+  } catch {
+    // Storage and backend failures are reported without exposing private URLs.
+  }
+  return new NextResponse(null, { status: 503, headers });
+}
+
 export async function POST(request: NextRequest) {
   const origin = process.env.FLEET_AUTH_ORIGIN ?? request.nextUrl.origin;
   if (request.headers.get("origin") !== origin)
