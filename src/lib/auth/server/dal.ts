@@ -2,9 +2,10 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 import type { Filter, ObjectId } from "mongodb";
-import { authRoutes, type AuthState } from "../types";
+import { authRoutes, requirementsRoute, type AuthState } from "../types";
 import { fleetDb, type FleetAccount, type FleetSession } from "./db";
 import { digest } from "./crypto";
 
@@ -32,18 +33,35 @@ export function companyPasswordTerms(
   return [account.companyName, account.companyEmail.split("@", 1)[0]];
 }
 
-export async function findApprovedAccount(
+export function eligibleFleetAccountFilter(): Filter<FleetAccount> {
+  // Legacy approved accounts can lack an account link.
+  // The review workspace requires a link to the same application record.
+  return {
+    $or: [
+      { status: "approved", accountId: null },
+      {
+        status: { $in: ["approved", "needs_update", "under_review"] },
+        accountId: { $type: "objectId" },
+        $expr: { $eq: ["$accountId", "$_id"] },
+      },
+    ],
+  };
+}
+
+export async function findEligibleAccount(
   lookup: { companyEmail: string } | { _id: ObjectId },
 ) {
   const filter: Filter<FleetAccount> = {
     ...lookup,
-    status: "approved",
-    password: { $type: "string" },
+    ...eligibleFleetAccountFilter(),
+    password: { $type: "string", $ne: "" },
   };
   if (process.env.NODE_ENV !== "development")
     filter.developmentOnly = { $ne: true };
   return (await fleetDb()).accounts.findOne(filter, {
     projection: {
+      status: 1,
+      accountId: 1,
       companyEmail: 1,
       companyName: 1,
       registeredBusinessName: 1,
@@ -55,9 +73,16 @@ export async function findApprovedAccount(
   });
 }
 
-export async function readFleetSession() {
+export async function readFleetSessionToken() {
   const token = (await cookies()).get(cookieName)?.value;
-  if (!token || !tokenPattern.test(token)) return null;
+  return token && tokenPattern.test(token) ? token : null;
+}
+
+export async function readFleetSession() {
+  const token = await readFleetSessionToken();
+  if (!token) return null;
+  // Session expiry and idle extension are evaluated only for a live request.
+  await connection();
   const { sessions, authenticators } = await fleetDb();
   const now = new Date();
   const session = await sessions.findOne({
@@ -66,7 +91,7 @@ export async function readFleetSession() {
     idleUntil: { $gt: now },
   });
   if (!session) return null;
-  const account = await findApprovedAccount({ _id: session.accountId });
+  const account = await findEligibleAccount({ _id: session.accountId });
   if (!account || digest(account.password) !== session.passwordVersion)
     return null;
   if (
@@ -155,7 +180,7 @@ export async function issueFleetSession(
 }
 
 // Memoize per render only. No session or company data is shared across requests.
-const requireFleetContext = cache(async () => {
+export const requireFleetContext = cache(async () => {
   const context = await readFleetSession();
   if (!context) redirect(authRoutes.SIGNED_OUT);
   if (context.session.status !== "AUTHENTICATED")
@@ -163,8 +188,21 @@ const requireFleetContext = cache(async () => {
   return context;
 });
 
+export async function requireDashboardAccess() {
+  // Dashboard data requires application approval in addition to a verified session.
+  const context = await requireFleetContext();
+  if (context.account.status !== "approved") redirect(requirementsRoute);
+  return context;
+}
+
+export async function requireOnboardingAccess() {
+  const context = await requireFleetContext();
+  if (context.account.status === "approved") redirect(authRoutes.AUTHENTICATED);
+  return context;
+}
+
 export async function requireFleetCompany() {
-  const { account } = await requireFleetContext();
+  const { account } = await requireDashboardAccess();
   return {
     name: account.companyName,
     location: account.garageAddress,
@@ -172,14 +210,21 @@ export async function requireFleetCompany() {
 }
 
 export async function requireCompanyPasswordTerms() {
-  const { account } = await requireFleetContext();
+  const { account } = await requireDashboardAccess();
   return companyPasswordTerms(account);
 }
 
-export function authenticatedState(session: FleetSession): AuthState {
+export function authenticatedState(
+  session: FleetSession,
+  account: FleetAccount,
+): AuthState {
   return {
     status: "AUTHENTICATED",
     nextAction: "continue",
+    destination:
+      account.status === "approved"
+        ? authRoutes.AUTHENTICATED
+        : requirementsRoute,
     expiresAt: session.expiresAt.getTime(),
     sessionMode: session.keepSignedIn ? "seven_days" : "browser",
   };

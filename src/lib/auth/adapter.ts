@@ -1,6 +1,8 @@
 import { z } from "zod";
 import {
   AuthError,
+  authRoutes,
+  requirementsRoute,
   type AuthAdapter,
   type AuthState,
   type TwoFactorSetup,
@@ -57,6 +59,7 @@ const authStateSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("AUTHENTICATED"),
     nextAction: z.literal("continue"),
+    destination: z.enum([authRoutes.AUTHENTICATED, requirementsRoute]),
     expiresAt,
     sessionMode: z.enum(["browser", "seven_days"]),
   }),

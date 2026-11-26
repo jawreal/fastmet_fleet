@@ -10,7 +10,8 @@ import { throttle } from "./rateLimit";
 import {
   authenticatedState,
   companyPasswordTerms,
-  findApprovedAccount,
+  eligibleFleetAccountFilter,
+  findEligibleAccount,
   issueFleetSession,
   readFleetSession,
   revokeFleetSession,
@@ -96,7 +97,7 @@ export async function stateFor(
       };
     }
     case "AUTHENTICATED":
-      return authenticatedState(session);
+      return authenticatedState(session, account);
   }
 }
 
@@ -131,7 +132,7 @@ export async function signIn(values: LoginRequest) {
   await throttle("login:global", 600, 60_000);
   await throttle("login:" + values.email, 10, 15 * 60_000);
   await verifyLoginTurnstile(values.turnstileToken);
-  const account = await findApprovedAccount({ companyEmail: values.email });
+  const account = await findEligibleAccount({ companyEmail: values.email });
   const valid = await verifyPassword(values.password, account?.password);
   if (!valid || !account)
     throw new AuthError("INVALID_CREDENTIALS", "Invalid email or password.");
@@ -164,12 +165,16 @@ async function replacePassword(context: StepContext, nextPassword: string) {
   }
 
   const password = await hashPassword(nextPassword);
+  // Re-check eligibility and the old hash because either can change while hashing.
   const result = await (
     await fleetDb()
   ).accounts.updateOne(
     {
       _id: account._id,
-      status: "approved",
+      ...eligibleFleetAccountFilter(),
+      ...(context.session.status === "AUTHENTICATED"
+        ? { status: "approved" }
+        : {}),
       password: account.password,
       mustChangePassword:
         context.session.status === "PASSWORD_CHANGE_REQUIRED"
@@ -208,6 +213,12 @@ export async function changeAccountPassword(
   newPassword: string,
 ) {
   const context = await requireStep("AUTHENTICATED");
+  if (context.account.status !== "approved") {
+    throw new AuthError(
+      "STEP_UNAVAILABLE",
+      "Account settings are available after application approval.",
+    );
+  }
   await throttle(
     "verify-password:" + context.account._id.toHexString(),
     5,

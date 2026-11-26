@@ -51,6 +51,7 @@ export async function throttle(key: string, limit: number, windowMs: number) {
       expiresAt - now,
     );
   } catch {
+    // Fail closed so a Redis outage cannot disable sign-in throttling.
     throw new AuthError(
       "UNAVAILABLE",
       "Sign-in protection is temporarily unavailable. Please try again.",

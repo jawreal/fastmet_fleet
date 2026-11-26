@@ -39,8 +39,11 @@ export function AuthStep({ expected, children }: Readonly<IAuthStep>) {
     (next: AuthState) => {
       setState(next);
       if (next.status === expected) return;
-      if (next.status === "AUTHENTICATED" || next.status === "SIGNED_OUT") {
-        window.location.replace(authRoutes[next.status]);
+      if (next.status === "AUTHENTICATED") {
+        // The server chooses between the dashboard and the application review workspace.
+        window.location.replace(next.destination);
+      } else if (next.status === "SIGNED_OUT") {
+        window.location.replace(authRoutes.SIGNED_OUT);
       } else {
         router.replace(authRoutes[next.status]);
       }

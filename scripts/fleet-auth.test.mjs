@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { createServer } from "node:net";
+import { createServer as createHttpServer } from "node:http";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 import { test } from "node:test";
@@ -83,7 +84,7 @@ async function startRedis(t) {
   return { port, password, client, stop };
 }
 
-async function startApp(t, uri, redis) {
+async function startApp(t, uri, redis, backendUrl) {
   const port = await freePort();
   const origin = "http://127.0.0.1:" + port;
   const siteverifyMock = new URL(
@@ -112,6 +113,7 @@ async function startApp(t, uri, redis) {
         NEXT_TELEMETRY_DISABLED: "1",
         FLEET_MONGODB_URI: uri,
         FLEET_AUTH_ORIGIN: origin,
+        FLEET_BACKEND_URL: backendUrl,
         FLEET_AUTH_ENCRYPTION_KEY: randomBytes(32).toString("hex"),
         REDIS_HOST: "127.0.0.1",
         REDIS_PORT: String(redis.port),
@@ -152,6 +154,75 @@ async function startApp(t, uri, redis) {
   throw new Error("Fleet test server did not start.\n" + output);
 }
 
+async function startRequirementsFixture(t, db) {
+  const submissions = [];
+  const server = createHttpServer(async (request, response) => {
+    try {
+      const token = request.headers.authorization?.split(" ")[1] ?? "";
+      const session = await db.collection("fleetwebsessions").findOne({
+        _id: createHash("sha256").update(token).digest("hex"),
+        status: "AUTHENTICATED",
+      });
+      const application = await db
+        .collection("fleetapplications")
+        .findOne({ _id: session?.accountId });
+      if (!session || !application) {
+        response.writeHead(401).end();
+        return;
+      }
+
+      if (
+        request.url === "/api/fleet/applications/me/resubmit" &&
+        request.method === "POST"
+      ) {
+        const chunks = [];
+        for await (const chunk of request) chunks.push(chunk);
+        submissions.push({
+          body: Buffer.concat(chunks).toString(),
+          contentType: request.headers["content-type"],
+        });
+        await db
+          .collection("fleetapplications")
+          .updateOne(
+            { _id: application._id },
+            { $set: { status: "under_review" } },
+          );
+        response
+          .writeHead(200, { "Content-Type": "application/json" })
+          .end(JSON.stringify({ status: "under_review" }));
+        return;
+      }
+
+      const status = application.status;
+      response.writeHead(200, { "Content-Type": "application/json" }).end(
+        JSON.stringify({
+          companyName: application.companyName,
+          status,
+          round: status === "under_review" ? 2 : 1,
+          documents: [
+            {
+              field: "repGovernmentId",
+              originalName: "id.pdf",
+              revision: status === "under_review" ? 2 : 1,
+              status: status === "under_review" ? "pending" : "needs_update",
+              reason:
+                status === "needs_update"
+                  ? "Upload a current government ID."
+                  : undefined,
+            },
+          ],
+        }),
+      );
+    } catch {
+      response.writeHead(500).end();
+    }
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  return { url: "http://127.0.0.1:" + server.address().port, submissions };
+}
+
 function client(origin) {
   let cookie = "";
   return {
@@ -161,9 +232,10 @@ function client(origin) {
       const options = { headers, redirect: "manual" };
       if (body !== undefined) {
         options.method = "POST";
-        options.body = JSON.stringify(body);
+        options.body = body instanceof FormData ? body : JSON.stringify(body);
         headers.Origin = requestOrigin;
-        headers["Content-Type"] = "application/json";
+        if (!(body instanceof FormData))
+          headers["Content-Type"] = "application/json";
       }
       const response = await fetch(origin + path, options);
       const issued = response.headers.get("set-cookie");
@@ -174,6 +246,7 @@ function client(origin) {
 }
 
 const api = "/api/fleet/auth/";
+const dashboardMarkup = /class="[^"]*\bfleet-dashboard\b[^"]*"/;
 async function requestState(browser, action, input, status = 200) {
   const body =
     action === "login"
@@ -202,7 +275,7 @@ async function assertRedirect(browser, destination) {
     "Expected redirect to " + destination,
   );
   assert.ok(
-    !html.includes('class="fleet-dashboard"'),
+    !dashboardMarkup.test(html),
     "The dashboard shell was emitted before authorization.",
   );
 }
@@ -324,9 +397,15 @@ test(
     const accounts = db.collection("fleetapplications");
     const initialPassword = "qwerty";
     const initialHash = await bcrypt.hash(initialPassword, 12);
-    await accounts.updateOne({ _id: id }, { $set: { password: initialHash } });
+    await accounts.updateOne(
+      { _id: id },
+      {
+        $set: { password: initialHash, status: "needs_update", accountId: id },
+      },
+    );
     const redis = await startRedis(t);
-    const origin = await startApp(t, uri, redis);
+    const backend = await startRequirementsFixture(t, db);
+    const origin = await startApp(t, uri, redis, backend.url);
     await t.test(
       "Turnstile verifies sign-ins, prevents replay, and runs after rate limiting",
       () => assertTurnstileProtection(origin, db, redis.client),
@@ -448,8 +527,41 @@ test(
     assert.equal(complete.body.status, "AUTHENTICATED");
     assert.equal(complete.body.sessionMode, "seven_days");
     assert.match(complete.headers.get("set-cookie"), /Expires=/i);
-    const dashboard = await browser.request("/operations/overview");
-    assert.match(await dashboard.text(), /fleet-dashboard/);
+    assert.equal(complete.body.destination, "/application/requirements");
+    await assertRedirect(browser, "/application/requirements");
+    const blockedUpload = await browser.request(
+      "/api/fleet/application/requirements",
+      {},
+    );
+    assert.equal(blockedUpload.status, 400);
+    const requirements = await browser.request("/application/requirements");
+    const html = await requirements.text();
+    assert.match(html, /Upload a current government ID/);
+    assert.doesNotMatch(html, dashboardMarkup);
+    const replacement = new FormData();
+    replacement.set("round", "1");
+    replacement.set("revisions", '{"repGovernmentId":1}');
+    replacement.set(
+      "repGovernmentId",
+      new File(["%PDF-1.7\n%%EOF"], "new-id.pdf", { type: "application/pdf" }),
+    );
+    const upload = await browser.request(
+      "/api/fleet/application/requirements",
+      replacement,
+    );
+    assert.equal(upload.status, 200);
+    assert.match(
+      backend.submissions[0]?.contentType,
+      /^multipart\/form-data; boundary=/,
+    );
+    assert.match(backend.submissions[0]?.body, /new-id\.pdf/);
+    const waiting = await requestState(browser, "state");
+    assert.equal(waiting.body.destination, "/application/requirements");
+    assert.equal(
+      (await browser.request("/api/fleet/application/requirements", {})).status,
+      403,
+    );
+    await accounts.updateOne({ _id: id }, { $set: { status: "needs_update" } });
 
     const revoked = browser.sessionCookie();
     await requestState(browser, "logout", {});
@@ -487,6 +599,27 @@ test(
       (await requestState(browser, "two-factor/verify", { code: current })).body
         .status,
       "AUTHENTICATED",
+    );
+    assert.equal(
+      (await requestState(browser, "state")).body.destination,
+      "/application/requirements",
+    );
+    await assertRedirect(browser, "/application/requirements");
+    await accounts.updateOne({ _id: id }, { $set: { status: "approved" } });
+    assert.equal(
+      (await requestState(browser, "state")).body.destination,
+      "/operations/overview",
+    );
+    const dashboard = await browser.request("/operations/overview");
+    assert.ok(
+      dashboardMarkup.test(await dashboard.text()),
+      "Expected rendered dashboard markup.",
+    );
+    // Approved credentials created before account linking remain eligible.
+    await accounts.updateOne({ _id: id }, { $unset: { accountId: "" } });
+    assert.equal(
+      (await requestState(browser, "state")).body.destination,
+      "/operations/overview",
     );
     const authenticatedCookie = browser.sessionCookie();
     const emailPassword = email + "2026!";
@@ -558,6 +691,15 @@ test(
     assert.notEqual(profile.secret, setup.manualKey);
     assert.equal(Object.hasOwn(profile, "pendingRecovery"), false);
     assert.ok(!profile.recoveryHashes.includes(recoveryCode));
+    await requestState(browser, "two-factor/recovery", {
+      code: enrolled.recoveryCodes[1],
+    });
+    await accounts.updateOne({ _id: id }, { $set: { status: "rejected" } });
+    assert.equal(
+      (await requestState(browser, "state")).body.status,
+      "SIGNED_OUT",
+    );
+    await assertRedirect(browser, "/login");
 
     await t.test(
       "Fleet sign-in fails closed while Redis is unavailable",

@@ -10,6 +10,7 @@ export type FleetAccount = {
   repFullName?: string;
   garageAddress: string;
   status: string;
+  accountId?: ObjectId | null;
   password: string;
   mustChangePassword?: boolean;
   developmentOnly?: boolean;
