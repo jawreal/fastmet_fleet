@@ -267,6 +267,8 @@ function client(origin) {
 
 const api = "/api/fleet/auth/";
 const dashboardMarkup = /class="[^"]*\bfleet-dashboard\b[^"]*"/;
+const landingMarkup = /class="fleet-landing"/;
+const loginMarkup = /id="auth-content"/;
 async function requestState(browser, action, input, status = 200) {
   const body =
     action === "login"
@@ -278,8 +280,13 @@ async function requestState(browser, action, input, status = 200) {
   return { body: await response.json(), headers: response.headers };
 }
 
-async function assertRedirect(browser, destination) {
-  const result = await browser.request("/operations/overview");
+async function assertRedirect(
+  browser,
+  destination,
+  path = "/operations/overview",
+  blockedMarkup = dashboardMarkup,
+) {
+  const result = await browser.request(path);
   // Next may issue a streamed redirect when request-time validation suspends.
   const location = result.headers.get("location");
   if (location) {
@@ -294,10 +301,16 @@ async function assertRedirect(browser, destination) {
     html.includes("NEXT_REDIRECT") && html.includes(destination),
     "Expected redirect to " + destination,
   );
-  assert.ok(
-    !dashboardMarkup.test(html),
-    "The dashboard shell was emitted before authorization.",
+  assert.doesNotMatch(
+    html,
+    blockedMarkup,
+    "Unexpected page content at " + path,
   );
+}
+
+async function assertGuestPageRedirects(browser, destination) {
+  await assertRedirect(browser, destination, "/", landingMarkup);
+  await assertRedirect(browser, destination, "/login", loginMarkup);
 }
 
 async function assertTurnstileProtection(origin, db, redis) {
@@ -441,6 +454,8 @@ test(
     assert.ok(Buffer.byteLength(newPassword) > 72);
     const change = { newPassword, confirmPassword: newPassword };
 
+    assert.match(await (await browser.request("/")).text(), landingMarkup);
+    assert.match(await (await browser.request("/login")).text(), loginMarkup);
     await assertRedirect(browser, "/login");
     assert.equal(
       (
@@ -552,6 +567,7 @@ test(
     assert.equal(complete.body.sessionMode, "seven_days");
     assert.match(complete.headers.get("set-cookie"), /Expires=/i);
     assert.equal(complete.body.destination, "/application/requirements");
+    await assertGuestPageRedirects(browser, "/application/requirements");
     const logo = await browser.request(logoPath);
     assert.equal(logo.status, 200);
     assert.equal(logo.headers.get("content-type"), "image/png");
@@ -570,6 +586,10 @@ test(
     const requirements = await browser.request("/application/requirements");
     const html = await requirements.text();
     assert.match(html, /Upload a current government ID/);
+    assert.match(
+      html,
+      /<a\b[^>]*aria-label="FastMet Fleet application requirements"[^>]*href="\/application\/requirements"/,
+    );
     assert.doesNotMatch(html, dashboardMarkup);
     const replacement = new FormData();
     replacement.set("round", "1");
@@ -598,6 +618,7 @@ test(
 
     const revoked = browser.sessionCookie();
     await requestState(browser, "logout", {});
+    assert.match(await (await browser.request("/login")).text(), loginMarkup);
     const stale = await fetch(origin + "/api/fleet/auth/state", {
       headers: { Cookie: revoked },
     });
@@ -643,6 +664,7 @@ test(
       (await requestState(browser, "state")).body.destination,
       "/operations/overview",
     );
+    await assertGuestPageRedirects(browser, "/operations/overview");
     const dashboard = await browser.request("/operations/overview");
     assert.ok(
       dashboardMarkup.test(await dashboard.text()),

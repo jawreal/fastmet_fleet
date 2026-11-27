@@ -217,7 +217,7 @@ export async function requireCompanyPasswordTerms() {
 export function authenticatedState(
   session: FleetSession,
   account: FleetAccount,
-): AuthState {
+): Extract<AuthState, { status: "AUTHENTICATED" }> {
   return {
     status: "AUTHENTICATED",
     nextAction: "continue",

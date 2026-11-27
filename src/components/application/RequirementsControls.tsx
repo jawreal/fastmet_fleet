@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Brand } from "@/components/auth/Brand";
 import { getAuthAdapter } from "@/lib/auth/adapter";
-import { authRoutes } from "@/lib/auth/types";
+import { authRoutes, requirementsRoute } from "@/lib/auth/types";
 import { Power } from "lucide-react";
 
 export function RetryRequirementsButton() {
@@ -61,7 +61,10 @@ export function RequirementsHeader({
   return (
     <header className="border-b dark:border-[#1f1f1f]">
       <div className="mx-auto flex min-h-18 w-full max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:px-8 lg:px-12">
-        <Brand />
+        <Brand
+          href={requirementsRoute}
+          label="FastMet Fleet application requirements"
+        />
         <AlertDialog
           onOpenChange={(open, details) => {
             if (!open && leaving) details.cancel();

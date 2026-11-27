@@ -1,11 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export function Brand() {
+export function Brand({
+  href = "/",
+  label = "FastMet Fleet home",
+}: Readonly<{ href?: string; label?: string }>) {
   return (
     <Link
-      href="/"
-      aria-label="FastMet Fleet home"
+      href={href}
+      aria-label={label}
       className="flex w-fit items-center gap-3 rounded-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
     >
       <Image src="/icon.png" alt="" width={32} height={32} />
