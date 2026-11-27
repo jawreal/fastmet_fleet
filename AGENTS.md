@@ -1,5 +1,8 @@
 # Agent development rules
 
+> [!CAUTION]
+> Read and follow the [local setup documentation](README.md#wsl2-setup) before working on Fleet. WSL2 Ubuntu is required for all local Fleet work. Running Fleet tooling directly on Windows or working from a Windows-mounted checkout can break native dependencies, line endings, and Git hooks.
+
 ## Fleet authentication context
 
 - Read [the fleet authentication context](docs/authentication-context.md) before planning or changing authentication, onboarding, or related routing in this project. Apply its constraints throughout this folder and its subfolders where relevant.
@@ -8,20 +11,28 @@
 
 ## WSL2 Ubuntu environment
 
-- This project runs in WSL2 Ubuntu. Run every command in Linux bash, never PowerShell, CMD, or Windows Node.
-- Keep the repository in the Linux filesystem (for example, `/home/jorel/projects/<repo>`). Use the existing Linux checkout; do not move it to or work from `/mnt/c/...`. Use Linux paths in commands and file references.
+- Run Fleet installs, scripts, tests, builds, and Git hooks in Ubuntu Bash. Never run them in PowerShell, CMD, Git Bash for Windows, or with Windows executables from WSL.
+- Use the existing checkout on the Ubuntu filesystem, such as `/home/jorel/fleet_project/fastmet_fleet`. Use Linux paths and open the checkout through your editor's WSL integration. Never work from `/mnt/c/...` or any other Windows-mounted drive.
 - Before running project commands, verify the environment from the repository directory:
 
   ```bash
   uname -a
   head -2 /etc/os-release
-  which node pnpm
-  pnpm exec oxlint --version
+  pwd -P
+  command -v node pnpm
   ```
 
-  Expect Linux with `microsoft` / WSL2, Ubuntu, Node and pnpm under `/home/jorel/.nvm/`, and an Oxlint version.
+  Confirm a WSL2 Linux kernel, Ubuntu, a checkout on the Linux filesystem, and Linux Node and pnpm paths under the user's NVM installation. Then check the runtime:
 
-- If a check shows a Windows executable path or an application-control blocking error, stop and tell the user. Do not work around it by changing dependencies or checks.
+  ```bash
+  node -p 'process.platform'
+  node --version
+  pnpm --version
+  ```
+
+  Expect `linux` from `process.platform`. Check the versions against [the runtime requirements](#dependencies-and-runtime). After installing dependencies, run `pnpm exec oxlint --version` to confirm its native binding loads.
+
+- If the environment check fails, stop Fleet work in that environment. Switch to the verified Ubuntu checkout when it is available. Tell the user which check failed and give them the commands to open WSL and return to this checkout. If WSL is missing or the user is new to it, walk them through [first-time WSL2 setup](README.md#first-time-wsl2-setup), including installing Ubuntu, confirming WSL version 2, opening the Linux checkout, and selecting Node and pnpm. Resume project commands only after the checks pass.
 - Windows Smart App Control blocks Oxlint's unsigned native binary on this machine. Its “Cannot find native binding” error alongside “An Application Control policy has blocked this file” means the command is running on Windows; run it in Ubuntu.
 - Never add OS-specific bindings such as `@oxlint/binding-win32-x64-msvc`, or edit `package.json` / `pnpm-lock.yaml` just to resolve tooling errors. Preserve Oxlint, lint-staged, and Husky hooks.
 - Do not copy `node_modules` between Windows and Ubuntu. If dependencies are broken, remove the repository's `node_modules` and reinstall in Ubuntu with `pnpm install --frozen-lockfile`.
@@ -29,7 +40,11 @@
 
 ## Dependencies and runtime
 
-- Use the Node.js range and pnpm version declared in `package.json`. Node.js 24 is recommended for development and used in CI.
+> [!IMPORTANT]
+> Use Node.js 24 from `.nvmrc` for normal Fleet work. Unsupported Node versions can trigger deprecation warnings or break tooling. Never downgrade to an end-of-life release or add a deprecated dependency to work around a runtime mismatch.
+
+- Run `nvm use` from the Fleet directory in each new Ubuntu shell. Run `nvm install` first if Node.js 24 is missing. Other Node releases are permitted only when explicitly selected within the stable range in `package.json` (`>=24.0.0 <27.0.0`). Use the exact pnpm version declared there.
+- If the runtime or package manager version is wrong, correct it in Ubuntu before installing dependencies or running Fleet commands. If a deprecation warning persists on the documented runtime, identify its source and report it. Keep the engine checks and lockfile protections in place.
 - Use pnpm for dependency installation and project scripts. Do not introduce `package-lock.json`, `yarn.lock`, or another package manager.
 - Install existing dependencies with `pnpm install --frozen-lockfile`.
 - Include `pnpm-lock.yaml` whenever dependency changes require it. Never edit the lockfile manually or bypass frozen-lockfile failures in CI.
