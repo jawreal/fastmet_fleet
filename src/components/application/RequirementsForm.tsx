@@ -28,8 +28,8 @@ import {
   RequirementDetails,
   requirementStatuses,
   type RequirementDisplayStatus,
-  type StagedReplacement,
 } from "./RequirementDetails";
+import { type StagedReplacement } from "./ReplacementFigure";
 import { RequirementsHeader } from "./RequirementsControls";
 
 const statusIcons = {
@@ -181,7 +181,7 @@ export function RequirementsForm({
     <section
       aria-labelledby="corrections-title"
       aria-busy={sending}
-      className="mt-1 flex flex-col gap-3 border-t pt-4"
+      className="flex flex-col gap-3 border-t pt-4"
     >
       {error && (
         <p role="alert" className="text-xs text-destructive">
