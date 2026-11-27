@@ -6,6 +6,9 @@ See the [Fleet authentication guide](docs/authentication-api.md) for local setup
 
 ## Requirements
 
+> [!CAUTION]
+> WSL2 Ubuntu is required for local Fleet development. Follow the setup below before installing or running Fleet. Windows Node.js, Windows shells, and checkouts on Windows-mounted drives can break native dependencies, file permissions, line endings, and Git hooks.
+
 - WSL2 Ubuntu, using Linux bash and Linux Node/pnpm for all commands
 - Node.js 24.0.0 or newer, below 27.0.0. Node.js 24 is recommended for development and used in CI.
 - pnpm 12.11.2 (the version declared in `package.json`)
@@ -16,31 +19,63 @@ Use pnpm for dependencies and project commands. Keep `pnpm-lock.yaml`; do not ge
 
 ## WSL2 setup
 
-This project's local development environment is WSL2 Ubuntu. Keep your checkout in the Linux filesystem (for example, `/home/jorel/projects/<repo>`), and open it through your editor's WSL integration. Run commands in Ubuntu bash, never PowerShell, CMD, or Windows Node. Do not work from `/mnt/c/...` or copy `node_modules` between Windows and Ubuntu.
+Keep your checkout in the Ubuntu filesystem, for example `/home/jorel/fleet_project/fastmet_fleet`. In each session, open **Ubuntu** from the Windows Start menu or launch `wsl -d Ubuntu` from Windows Terminal. Once in Ubuntu, `cd` to the Fleet directory and run `nvm use`. Run all project commands in Ubuntu Bash. Never run Fleet tooling from PowerShell, CMD, or Git Bash for Windows, work under `/mnt/c/...` or another Windows-mounted drive, or copy `node_modules` between operating systems.
 
-Before running project commands, check from the repository directory:
+### First-time WSL2 setup
+
+1. On Windows, open PowerShell as administrator to install WSL and Ubuntu. Restart Windows if prompted. Use PowerShell here for WSL setup only. [Microsoft's WSL installation guide](https://learn.microsoft.com/en-us/windows/wsl/install)
+
+   ```powershell
+   wsl --install -d Ubuntu
+   ```
+
+2. Open **Ubuntu** from the Start menu and create a Linux username and password when prompted. In Windows PowerShell, run `wsl --list --verbose` and confirm Ubuntu shows `VERSION 2`. If it shows `1`, run `wsl --set-version Ubuntu 2` before continuing.
+3. Return to Ubuntu Bash and install Git and the prerequisites for NVM. Install NVM inside Ubuntu, then open a new Ubuntu shell. [NVM installation instructions](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+   ```bash
+   sudo apt update
+   sudo apt install -y git curl ca-certificates
+   ```
+
+4. If you already have a Fleet checkout under your Ubuntu home directory, use it. Otherwise, clone the Fleet repository from Ubuntu into a directory under `~/` and enter the Fleet directory containing `.nvmrc` and `package.json`. For VS Code, install the **WSL** extension and run `code .` from that Ubuntu directory. [VS Code WSL setup](https://code.visualstudio.com/docs/remote/wsl)
+5. For the local databases, start Docker Desktop and enable **Settings → Resources → WSL Integration → Ubuntu**. Back in Ubuntu Bash, run `docker compose version` to check that Compose is available. [Docker Desktop WSL integration](https://docs.docker.com/desktop/features/wsl/)
+
+### Verify the environment
+
+From the Fleet directory in Ubuntu, run `nvm install` if Node.js 24 is missing, then run `nvm use`. Verify the environment before installing dependencies or running Fleet:
 
 ```bash
-uname -a                    # Linux with microsoft / WSL2
-head -2 /etc/os-release      # Ubuntu
-which node pnpm             # Under /home/jorel/.nvm/, not /mnt/c/...
-pnpm exec oxlint --version   # Prints a version
+uname -a                   # Linux with microsoft / WSL2
+head -2 /etc/os-release    # Ubuntu
+pwd -P                     # Under /home/<linux-user>/...
+command -v node pnpm       # Both under the Linux NVM installation
 ```
 
-If a check shows a Windows executable path or an application-control blocking error, stop and switch to Ubuntu before continuing. On this machine, Windows Smart App Control blocks Oxlint's unsigned native binary and can produce a misleading “Cannot find native binding” error. Do not add OS-specific bindings, edit the package manifest or lockfile, remove lint tools, or bypass Git hooks to fix this environment issue.
+After confirming both executable paths are in the Linux NVM installation, check the runtime:
+
+```bash
+node -p 'process.platform' # linux
+node --version             # v24.x.x for the default setup
+pnpm --version             # 12.11.2
+```
+
+If the Node path is on a Windows mount, activate the Linux NVM installation and run `nvm use` again. If pnpm is missing, resolves to a Windows path, or reports the wrong version, verify that `command -v npm` points to the Linux Node.js 24 installation, then run `npm install --global pnpm@12.11.2` there. Run `hash -r` and repeat the checks. Use pnpm for all Fleet dependency installs and project scripts.
+
+If a check shows a Windows executable path, a Windows-mounted checkout, or an application-control blocking error, stop and correct the environment before continuing. Windows Smart App Control can block Oxlint's native binary and report “Cannot find native binding.” Do not add Windows bindings, edit the package manifest or lockfile, remove lint tools, or bypass Git hooks to fix this environment issue.
 
 ## Install and run
 
-From the Fleet repository directory, install the dependencies.
+> [!IMPORTANT]
+> Use Node.js 24, the version selected by `.nvmrc` and used in CI. Unsupported or end-of-life versions can trigger deprecation warnings and break dependencies or builds. Correct the runtime first. Avoid adding deprecated modules or relaxing engine checks to get an install to pass.
+
+With the environment checks passing, install the dependencies and verify that Oxlint loads its Linux native binding.
 
 ```sh
-nvm install
-nvm use
-node --version
 pnpm install --frozen-lockfile
+pnpm exec oxlint --version
 ```
 
-With NVM installed, `nvm install` and `nvm use` read `.nvmrc` and select Node.js 24. Other supported Node versions can be selected explicitly. pnpm rejects unsupported versions through `engines.node` and `engineStrict`.
+If you explicitly need a different Node version, use a stable release within the `engines.node` range in `package.json` (`>=24.0.0 <27.0.0`). pnpm uses that range and `engineStrict` to reject unsupported versions. If a deprecation warning persists after switching to Node.js 24, identify and report the module that emits it before changing dependencies.
 
 If you don't have `.env.local`, run `cp .env.example .env.local` and `chmod 600 .env.local`. Keep this file private. Run `openssl rand -hex 24` twice for separate MongoDB and Redis passwords. Use the MongoDB password in both `FLEET_MONGO_PASSWORD` and `FLEET_MONGODB_URI`, and put the Redis password in `REDIS_PASSWORD`. Run `openssl rand -hex 32` for `FLEET_AUTH_ENCRYPTION_KEY` and keep that key stable. The [Fleet authentication guide](docs/authentication-api.md#turnstile-configuration) gives public Turnstile test keys for local sign-in.
 

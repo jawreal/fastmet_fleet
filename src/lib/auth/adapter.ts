@@ -17,11 +17,13 @@ const errorSchema = z.object({
       "CHALLENGE_EXPIRED",
       "STEP_UNAVAILABLE",
       "INVALID_CREDENTIALS",
+      "APPLICATION_REJECTED",
       "INVALID_INPUT",
       "RATE_LIMITED",
       "UNAVAILABLE",
     ]),
     message: z.string(),
+    rejectionReason: z.string().optional(),
   }),
 });
 const expiresAt = z.number();
@@ -93,7 +95,11 @@ async function request<T>(
   } else {
     const parsed = errorSchema.safeParse(data);
     if (parsed.success)
-      throw new AuthError(parsed.data.error.code, parsed.data.error.message);
+      throw new AuthError(
+        parsed.data.error.code,
+        parsed.data.error.message,
+        parsed.data.error.rejectionReason,
+      );
   }
   throw new AuthError(
     "UNAVAILABLE",

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const fleetSupportEmail = "support@fastmet.com.ph";
+
 // These names also identify the document slots in the backend upload contract.
 export const requirementFields = [
   "logo",

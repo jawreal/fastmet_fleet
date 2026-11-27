@@ -267,6 +267,8 @@ function client(origin) {
 
 const api = "/api/fleet/auth/";
 const dashboardMarkup = /class="[^"]*\bfleet-dashboard\b[^"]*"/;
+const landingMarkup = /class="fleet-landing"/;
+const loginMarkup = /id="auth-content"/;
 async function requestState(browser, action, input, status = 200) {
   const body =
     action === "login"
@@ -278,8 +280,13 @@ async function requestState(browser, action, input, status = 200) {
   return { body: await response.json(), headers: response.headers };
 }
 
-async function assertRedirect(browser, destination) {
-  const result = await browser.request("/operations/overview");
+async function assertRedirect(
+  browser,
+  destination,
+  path = "/operations/overview",
+  blockedMarkup = dashboardMarkup,
+) {
+  const result = await browser.request(path);
   // Next may issue a streamed redirect when request-time validation suspends.
   const location = result.headers.get("location");
   if (location) {
@@ -294,10 +301,16 @@ async function assertRedirect(browser, destination) {
     html.includes("NEXT_REDIRECT") && html.includes(destination),
     "Expected redirect to " + destination,
   );
-  assert.ok(
-    !dashboardMarkup.test(html),
-    "The dashboard shell was emitted before authorization.",
+  assert.doesNotMatch(
+    html,
+    blockedMarkup,
+    "Unexpected page content at " + path,
   );
+}
+
+async function assertGuestPageRedirects(browser, destination) {
+  await assertRedirect(browser, destination, "/", landingMarkup);
+  await assertRedirect(browser, destination, "/login", loginMarkup);
 }
 
 async function assertTurnstileProtection(origin, db, redis) {
@@ -441,6 +454,8 @@ test(
     assert.ok(Buffer.byteLength(newPassword) > 72);
     const change = { newPassword, confirmPassword: newPassword };
 
+    assert.match(await (await browser.request("/")).text(), landingMarkup);
+    assert.match(await (await browser.request("/login")).text(), loginMarkup);
     await assertRedirect(browser, "/login");
     assert.equal(
       (
@@ -552,6 +567,7 @@ test(
     assert.equal(complete.body.sessionMode, "seven_days");
     assert.match(complete.headers.get("set-cookie"), /Expires=/i);
     assert.equal(complete.body.destination, "/application/requirements");
+    await assertGuestPageRedirects(browser, "/application/requirements");
     const logo = await browser.request(logoPath);
     assert.equal(logo.status, 200);
     assert.equal(logo.headers.get("content-type"), "image/png");
@@ -570,6 +586,10 @@ test(
     const requirements = await browser.request("/application/requirements");
     const html = await requirements.text();
     assert.match(html, /Upload a current government ID/);
+    assert.match(
+      html,
+      /<a\b[^>]*aria-label="FastMet Fleet application requirements"[^>]*href="\/application\/requirements"/,
+    );
     assert.doesNotMatch(html, dashboardMarkup);
     const replacement = new FormData();
     replacement.set("round", "1");
@@ -598,6 +618,7 @@ test(
 
     const revoked = browser.sessionCookie();
     await requestState(browser, "logout", {});
+    assert.match(await (await browser.request("/login")).text(), loginMarkup);
     const stale = await fetch(origin + "/api/fleet/auth/state", {
       headers: { Cookie: revoked },
     });
@@ -643,6 +664,7 @@ test(
       (await requestState(browser, "state")).body.destination,
       "/operations/overview",
     );
+    await assertGuestPageRedirects(browser, "/operations/overview");
     const dashboard = await browser.request("/operations/overview");
     assert.ok(
       dashboardMarkup.test(await dashboard.text()),
@@ -702,19 +724,18 @@ test(
       ).body.status,
       "AUTHENTICATED",
     );
-    await requestState(browser, "logout", {});
-    await requestState(browser, "login", {
+    const replayBrowser = client(origin);
+    await requestState(replayBrowser, "login", {
       email,
       password: anotherPassword,
       keepSignedIn: false,
     });
     await requestState(
-      browser,
+      replayBrowser,
       "two-factor/recovery",
       { code: recoveryCode },
       401,
     );
-
     const stored = await accounts.findOne({ _id: id });
     assert.match(stored.password, /^scrypt-v1\$/);
     assert.equal(Object.hasOwn(stored, "confirmPassword"), false);
@@ -724,15 +745,133 @@ test(
     assert.notEqual(profile.secret, setup.manualKey);
     assert.equal(Object.hasOwn(profile, "pendingRecovery"), false);
     assert.ok(!profile.recoveryHashes.includes(recoveryCode));
-    await requestState(browser, "two-factor/recovery", {
-      code: enrolled.recoveryCodes[1],
-    });
-    await accounts.updateOne({ _id: id }, { $set: { status: "rejected" } });
+    const rejectionReason =
+      "The business permit did not match the registered company.";
+    await accounts.updateOne(
+      { _id: id },
+      { $set: { status: "rejected", rejectionReason } },
+    );
     assert.equal(
-      (await requestState(browser, "state")).body.status,
+      (await requestState(replayBrowser, "state")).body.status,
       "SIGNED_OUT",
     );
-    await assertRedirect(browser, "/login");
+    await assertRedirect(
+      replayBrowser,
+      "/login",
+      "/two-factor/verify",
+      loginMarkup,
+    );
+    const staleRecovery = await requestState(
+      replayBrowser,
+      "two-factor/recovery",
+      { code: enrolled.recoveryCodes[1] },
+      401,
+    );
+    assert.equal(staleRecovery.body.error.code, "CHALLENGE_EXPIRED");
+    assert.equal(
+      (await requestState(browser, "state")).body.destination,
+      "/application/requirements",
+    );
+    await assertRedirect(browser, "/application/requirements");
+    assert.equal((await browser.request(logoPath)).status, 403);
+    assert.equal(
+      (await browser.request("/api/fleet/application/requirements", {})).status,
+      403,
+    );
+    const decisionHtml = await (
+      await browser.request("/application/requirements")
+    ).text();
+    assert.ok(decisionHtml.includes(rejectionReason));
+    assert.match(decisionHtml, /href="mailto:support@fastmet\.com\.ph"/);
+    assert.doesNotMatch(decisionHtml, /Upload a current government ID/);
+
+    await requestState(browser, "logout", {});
+    const expiredDecision = await browser.request("/application/requirements");
+    assert.ok(!(await expiredDecision.text()).includes(rejectionReason));
+
+    await t.test(
+      "rejection blocks new and pending onboarding sessions",
+      async () => {
+        const fixture = await createDevelopmentAccount(db);
+        const login = {
+          email: fixture.companyEmail,
+          password: fixture.initialPassword,
+          keepSignedIn: true,
+        };
+        const rejectedBrowser = client(origin);
+        const beforeRejection = await requestState(
+          rejectedBrowser,
+          "login",
+          login,
+        );
+        assert.equal(beforeRejection.body.status, "PASSWORD_CHANGE_REQUIRED");
+        await accounts.updateOne(
+          { _id: fixture.id },
+          { $set: { status: "rejected", rejectionReason } },
+        );
+
+        const checkPages = async () => {
+          for (const path of [
+            "/change-password",
+            "/two-factor/setup",
+            "/two-factor/verify",
+            "/two-factor/recovery-codes",
+          ]) {
+            await assertRedirect(rejectedBrowser, "/login", path, loginMarkup);
+          }
+        };
+        assert.equal(
+          (await requestState(rejectedBrowser, "state")).body.status,
+          "SIGNED_OUT",
+        );
+        await checkPages();
+        for (const [action, input] of [
+          ["change-password", change],
+          ["two-factor/setup", {}],
+          ["two-factor/confirm", { code: "123456" }],
+          ["two-factor/verify", { code: "123456" }],
+          ["two-factor/recovery", { code: enrolled.recoveryCodes[1] }],
+          ["recovery-codes/acknowledge", {}],
+        ]) {
+          const { body } = await requestState(
+            rejectedBrowser,
+            action,
+            input,
+            401,
+          );
+          assert.equal(body.error.code, "CHALLENGE_EXPIRED");
+        }
+        const wrong = await requestState(
+          rejectedBrowser,
+          "login",
+          { ...login, password: "incorrect-password" },
+          401,
+        );
+        assert.equal(wrong.body.error.code, "INVALID_CREDENTIALS");
+        assert.equal(wrong.body.error.rejectionReason, undefined);
+
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const rejected = await requestState(
+            rejectedBrowser,
+            "login",
+            login,
+            403,
+          );
+          assert.equal(rejected.body.error.code, "APPLICATION_REJECTED");
+          assert.equal(rejected.body.error.rejectionReason, rejectionReason);
+          assert.match(rejected.headers.get("set-cookie"), /Max-Age=0/);
+          assert.equal(
+            (await requestState(rejectedBrowser, "state")).body.status,
+            "SIGNED_OUT",
+          );
+          assert.match(
+            await (await rejectedBrowser.request("/login")).text(),
+            loginMarkup,
+          );
+        }
+        await checkPages();
+      },
+    );
 
     await t.test(
       "Fleet sign-in fails closed while Redis is unavailable",
