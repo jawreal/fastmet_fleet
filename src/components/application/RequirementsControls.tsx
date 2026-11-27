@@ -27,6 +27,7 @@ export function RetryRequirementsButton() {
       type="button"
       variant="outline"
       size="lg"
+      className="requirements-control h-9 rounded-[8px] px-4 text-[13px] font-semibold max-[480px]:w-full"
       aria-busy={refreshing}
       disabled={refreshing}
       onClick={() => startTransition(() => router.refresh())}
