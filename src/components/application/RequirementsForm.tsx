@@ -270,7 +270,7 @@ export function RequirementsForm({
         hasReplacements={Object.values(replacements).some(Boolean)}
         submitting={sending}
       />
-      <main className="mx-auto max-w-[1040px] px-4 pt-10 pb-16">
+      <main className="mx-auto max-w-7xl px-5 lg:px-12 pt-10 pb-16">
         <div>
           <p className="wrap-anywhere text-xs text-muted-foreground">
             {companyName}
