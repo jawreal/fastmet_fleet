@@ -1,0 +1,51 @@
+services:
+  mongo:
+    image: mongo:8.2.6
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: fleet_dev
+      MONGO_INITDB_ROOT_PASSWORD: ${FLEET_MONGO_PASSWORD:?Set FLEET_MONGO_PASSWORD in .env.local}
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      # Use the service hostname to skip the loopback-only initialization server.
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --host mongo --quiet --username "$$MONGO_INITDB_ROOT_USERNAME"
+          --password "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin
+          --eval 'db.adminCommand({ ping: 1 })'
+      interval: 5s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  redis:
+    image: redis:7.4.12
+    restart: unless-stopped
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env.local}
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env.local}
+      - --appendonly
+      - "yes"
+      - --maxmemory-policy
+      - noeviction
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-14639}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -qx PONG"]
+      interval: 5s
+      timeout: 3s
+      start_period: 10s
+      retries: 5
+
+volumes:
+  mongo_data:
+  redis_data:

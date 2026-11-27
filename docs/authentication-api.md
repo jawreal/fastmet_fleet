@@ -15,7 +15,7 @@ Set these server-only values in `.env.local`.
 
 ### Redis rate limits
 
-Set `REDIS_HOST`, `REDIS_PORT`, and `REDIS_PASSWORD` in Fleet's environment using the same connection values as the backend. If the Redis endpoint uses TLS, set `REDIS_TLS=true`. Fleet connects to Redis directly and uses keys under `fastmet:fleet:auth:rate-limit:` with a separate suffix for each runtime environment. A shared Redis instance should use `noeviction` so counters survive until their time window expires.
+For local Docker development, use the Redis settings in [the README](../README.md#install-and-run). Set `REDIS_HOST`, `REDIS_PORT`, and `REDIS_PASSWORD` for the instance Fleet should use. If the Redis endpoint uses TLS, set `REDIS_TLS=true`. Fleet connects to Redis directly and uses keys under `fastmet:fleet:auth:rate-limit:` with a separate suffix for each runtime environment. A shared Redis instance should use `noeviction` so counters survive until their time window expires.
 
 Fleet uses fixed-window counters for sign-in, password changes, and authenticator or recovery codes. Redis updates the counters atomically. If Redis is unavailable, Fleet returns `503` for protected attempts. Existing MongoDB counters expire under their original TTL index while new counters start in Redis.
 

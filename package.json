@@ -8,6 +8,13 @@
   "scripts": {
     "dev": "node scripts/check-node.mjs && next dev",
     "dev:custom": "node scripts/check-node.mjs && next dev -p 4001",
+    "docker:compose": "docker compose --env-file .env.local -f compose.yaml",
+    "docker:up": "pnpm docker:compose up -d --wait",
+    "docker:down": "pnpm docker:compose down",
+    "docker:stop": "pnpm docker:compose stop",
+    "docker:restart": "pnpm docker:compose restart",
+    "docker:logs": "pnpm docker:compose logs --follow",
+    "docker:ps": "pnpm docker:compose ps --all",
     "build": "node scripts/check-node.mjs && next build",
     "start": "node scripts/check-node.mjs && next start",
     "lint": "oxlint",
