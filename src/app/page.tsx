@@ -16,6 +16,7 @@ import { FleetReveal } from "@/components/landing/FleetReveal";
 import { FleetDashboardPreview } from "@/components/FleetDashboardPreview";
 import { OperationsPreview } from "@/components/landing/OperationsPreview";
 import { buttonVariants } from "@/components/ui/button";
+import { GuestOnly } from "@/lib/auth/server/protectPage";
 import "./fleet-showcase.css";
 
 export const metadata: Metadata = {
@@ -104,6 +105,14 @@ function SignInLink({ primary = false }: Readonly<{ primary?: boolean }>) {
 }
 
 export default function LandingPage() {
+  return (
+    <GuestOnly>
+      <LandingContent />
+    </GuestOnly>
+  );
+}
+
+function LandingContent() {
   return (
     <div className="fleet-landing">
       <a

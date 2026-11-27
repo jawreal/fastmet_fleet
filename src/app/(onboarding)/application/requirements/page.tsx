@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FileWarning } from "lucide-react";
+import { CircleAlert, FileWarning } from "lucide-react";
 import { Suspense } from "react";
 import { RequirementsForm } from "@/components/application/RequirementsForm";
 import {
@@ -7,7 +7,9 @@ import {
   RequirementsHeader,
 } from "@/components/application/RequirementsControls";
 import { loadFleetRequirements } from "@/lib/application/backend";
+import { fleetSupportEmail } from "@/lib/application/requirements";
 import { requireOnboardingAccess } from "@/lib/auth/server/dal";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import "@/components/application/requirements-workspace.css";
 import DataLoader from "@/components/Loader";
 
@@ -17,6 +19,35 @@ export const metadata: Metadata = {
 
 async function Workspace() {
   const { account } = await requireOnboardingAccess();
+  if (account.status === "rejected") {
+    const reason = account.rejectionReason?.trim();
+    return (
+      <div className="requirements-workspace flex flex-col">
+        <RequirementsHeader />
+        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-5 py-10">
+          <Alert className="items-start rounded-2xl p-5 sm:p-6">
+            <CircleAlert
+              aria-hidden="true"
+              className="size-5 text-destructive"
+            />
+            <AlertTitle>
+              <h1 className="text-sm font-semibold">Application rejected</h1>
+            </AlertTitle>
+            <AlertDescription className="space-y-3 text-[13px]">
+              <p className="whitespace-pre-wrap wrap-anywhere">
+                {reason || "A reason was not provided."}
+              </p>
+              <p>
+                If you have questions about this decision, email{" "}
+                <a href={`mailto:${fleetSupportEmail}`}>{fleetSupportEmail}</a>.
+              </p>
+            </AlertDescription>
+          </Alert>
+        </main>
+      </div>
+    );
+  }
+
   const application = await loadFleetRequirements();
   if (application) {
     // A new review round or status starts a fresh replacement form.

@@ -11,7 +11,7 @@ import {
   authenticatedState,
   companyPasswordTerms,
   eligibleFleetAccountFilter,
-  findEligibleAccount,
+  findFleetSignInAccount,
   issueFleetSession,
   readFleetSession,
   revokeFleetSession,
@@ -132,10 +132,19 @@ export async function signIn(values: LoginRequest) {
   await throttle("login:global", 600, 60_000);
   await throttle("login:" + values.email, 10, 15 * 60_000);
   await verifyLoginTurnstile(values.turnstileToken);
-  const account = await findEligibleAccount({ companyEmail: values.email });
+  const account = await findFleetSignInAccount(values.email);
   const valid = await verifyPassword(values.password, account?.password);
   if (!valid || !account)
     throw new AuthError("INVALID_CREDENTIALS", "Invalid email or password.");
+
+  if (account.status === "rejected") {
+    await revokeFleetSession();
+    throw new AuthError(
+      "APPLICATION_REJECTED",
+      "Your Fleet application was rejected.",
+      account.rejectionReason?.trim() || undefined,
+    );
+  }
 
   const status =
     account.mustChangePassword !== false

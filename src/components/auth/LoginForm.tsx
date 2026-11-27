@@ -20,6 +20,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { AuthError } from "@/lib/auth/types";
 import {
   loginSchema,
   submitLogin,
@@ -27,6 +28,7 @@ import {
   type LoginValues,
 } from "@/lib/auth/login";
 import { AuthAlert } from "./AuthAlert";
+import { ApplicationRejection } from "./ApplicationRejection";
 import { TurnstileWidget, type TurnstileWidgetHandle } from "./TurnstileWidget";
 
 interface LoginFormProps {
@@ -41,6 +43,7 @@ export function LoginForm({
 }: Readonly<LoginFormProps>) {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const requestPending = useRef(false);
   const alertRef = useRef<HTMLDivElement>(null);
   const turnstileWidget = useRef<TurnstileWidgetHandle>(null);
@@ -71,11 +74,18 @@ export function LoginForm({
     try {
       await onSubmit({ ...values, turnstileToken });
     } catch (error) {
-      report(
-        error instanceof Error
-          ? error.message
-          : "Unable to sign in. Please try again.",
-      );
+      if (error instanceof AuthError && error.code === "APPLICATION_REJECTED") {
+        form.resetField("password");
+        setShowPassword(false);
+        setToken(null);
+        setRejectionReason(error.rejectionReason ?? "");
+      } else {
+        report(
+          error instanceof Error
+            ? error.message
+            : "Unable to sign in. Please try again.",
+        );
+      }
     } finally {
       turnstileWidget.current?.reset();
     }
@@ -90,6 +100,18 @@ export function LoginForm({
     } finally {
       requestPending.current = false;
     }
+  }
+
+  if (rejectionReason !== null) {
+    return (
+      <ApplicationRejection
+        reason={rejectionReason}
+        onBack={() => {
+          setRejectionReason(null);
+          requestAnimationFrame(() => form.setFocus("email"));
+        }}
+      />
+    );
   }
 
   return (
