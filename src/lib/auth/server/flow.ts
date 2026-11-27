@@ -1,5 +1,4 @@
 import "server-only";
-import { MongoServerError } from "mongodb";
 import { AuthError, type AuthState, type TwoFactorSetupState } from "../types";
 import type { LoginRequest } from "../login";
 import { verifyLoginTurnstile } from "./turnstile";
@@ -7,10 +6,12 @@ import { assessPassword } from "../password-policy";
 import { fleetDb, type FleetAccount, type FleetSession } from "./db";
 import { digest, unseal } from "./crypto";
 import { hashPassword, verifyPassword } from "./password";
+import { throttle } from "./rateLimit";
 import {
   authenticatedState,
   companyPasswordTerms,
-  findApprovedAccount,
+  eligibleFleetAccountFilter,
+  findEligibleAccount,
   issueFleetSession,
   readFleetSession,
   revokeFleetSession,
@@ -20,36 +21,6 @@ import {
 export type StepContext = NonNullable<
   Awaited<ReturnType<typeof readFleetSession>>
 >;
-
-export async function throttle(key: string, limit: number, windowMs: number) {
-  const { attempts } = await fleetDb();
-  const expiresAt = new Date(
-    (Math.floor(Date.now() / windowMs) + 1) * windowMs,
-  );
-  const _id = digest(key + ":" + expiresAt.toISOString());
-  const counter = await attempts
-    .findOneAndUpdate(
-      { _id },
-      { $inc: { count: 1 }, $setOnInsert: { expiresAt } },
-      { upsert: true, returnDocument: "after" },
-    )
-    .catch((error: unknown) => {
-      if (error instanceof MongoServerError && error.code === 11000) {
-        return attempts.findOneAndUpdate(
-          { _id },
-          { $inc: { count: 1 } },
-          { returnDocument: "after" },
-        );
-      }
-      throw error;
-    });
-  if (!counter || counter.count > limit) {
-    throw new AuthError(
-      "RATE_LIMITED",
-      "Too many attempts. Please try again later.",
-    );
-  }
-}
 
 function requireTransition(session: FleetSession | null) {
   if (!session)
@@ -126,7 +97,7 @@ export async function stateFor(
       };
     }
     case "AUTHENTICATED":
-      return authenticatedState(session);
+      return authenticatedState(session, account);
   }
 }
 
@@ -161,7 +132,7 @@ export async function signIn(values: LoginRequest) {
   await throttle("login:global", 600, 60_000);
   await throttle("login:" + values.email, 10, 15 * 60_000);
   await verifyLoginTurnstile(values.turnstileToken);
-  const account = await findApprovedAccount({ companyEmail: values.email });
+  const account = await findEligibleAccount({ companyEmail: values.email });
   const valid = await verifyPassword(values.password, account?.password);
   if (!valid || !account)
     throw new AuthError("INVALID_CREDENTIALS", "Invalid email or password.");
@@ -194,12 +165,16 @@ async function replacePassword(context: StepContext, nextPassword: string) {
   }
 
   const password = await hashPassword(nextPassword);
+  // Re-check eligibility and the old hash because either can change while hashing.
   const result = await (
     await fleetDb()
   ).accounts.updateOne(
     {
       _id: account._id,
-      status: "approved",
+      ...eligibleFleetAccountFilter(),
+      ...(context.session.status === "AUTHENTICATED"
+        ? { status: "approved" }
+        : {}),
       password: account.password,
       mustChangePassword:
         context.session.status === "PASSWORD_CHANGE_REQUIRED"
@@ -238,6 +213,12 @@ export async function changeAccountPassword(
   newPassword: string,
 ) {
   const context = await requireStep("AUTHENTICATED");
+  if (context.account.status !== "approved") {
+    throw new AuthError(
+      "STEP_UNAVAILABLE",
+      "Account settings are available after application approval.",
+    );
+  }
   await throttle(
     "verify-password:" + context.account._id.toHexString(),
     5,

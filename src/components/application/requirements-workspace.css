@@ -1,0 +1,40 @@
+.requirements-workspace,
+.requirements-viewer,
+.requirements-menu {
+  font-family: var(--font-sans), Geist, Inter, system-ui, sans-serif;
+}
+
+.requirements-workspace {
+  min-height: 100svh;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.requirements-control {
+  border-color: var(--input);
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.requirements-control:hover {
+  background: var(--accent);
+}
+
+.requirements-workspace :is(button, a):focus-visible,
+.requirements-viewer :is(button, a):focus-visible,
+.requirements-menu :is(a, [role="menuitem"]):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.requirements-menu :is(a, [role="menuitem"]):focus-visible {
+  outline-offset: -2px;
+}
+
+[data-slot="dialog-overlay"]:has(~ .requirements-viewer) {
+  background: rgb(0 0 0 / 75%);
+  backdrop-filter: none;
+}

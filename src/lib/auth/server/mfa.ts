@@ -5,10 +5,10 @@ import { Secret, TOTP } from "otpauth";
 import { AuthError } from "../types";
 import { fleetDb } from "./db";
 import { digest, seal, unseal } from "./crypto";
+import { throttle } from "./rateLimit";
 import {
   advance,
   requireStep,
-  throttle,
   twoFactorSetupState,
   type StepContext,
 } from "./flow";

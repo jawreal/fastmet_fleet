@@ -8,6 +8,9 @@ export type TwoFactorSetupState = {
   passwordChanged?: true;
 };
 
+export const requirementsRoute = "/application/requirements";
+const dashboardRoute = "/operations/overview";
+
 export type AuthState =
   | {
       status: "SIGNED_OUT";
@@ -35,6 +38,7 @@ export type AuthState =
   | {
       status: "AUTHENTICATED";
       nextAction: "continue";
+      destination: typeof dashboardRoute | typeof requirementsRoute;
       expiresAt: number;
       sessionMode: "browser" | "seven_days";
     };
@@ -83,11 +87,11 @@ export class AuthError extends Error {
   }
 }
 
-export const authRoutes: Record<AuthState["status"], string> = {
+export const authRoutes = {
   SIGNED_OUT: "/login",
   PASSWORD_CHANGE_REQUIRED: "/change-password",
   TWO_FACTOR_SETUP_REQUIRED: "/two-factor/setup",
   TWO_FACTOR_REQUIRED: "/two-factor/verify",
   RECOVERY_CODES_REQUIRED: "/two-factor/recovery-codes",
-  AUTHENTICATED: "/operations/overview",
-};
+  AUTHENTICATED: dashboardRoute,
+} as const satisfies Record<AuthState["status"], string>;
