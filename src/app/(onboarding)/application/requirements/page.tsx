@@ -9,6 +9,7 @@ import {
 import { loadFleetRequirements } from "@/lib/application/backend";
 import { requireOnboardingAccess } from "@/lib/auth/server/dal";
 import "@/components/application/requirements-workspace.css";
+import DataLoader from "@/components/Loader";
 
 export const metadata: Metadata = {
   title: "Application requirements | FastMet Fleet",
@@ -69,8 +70,8 @@ export default function RequirementsPage() {
   return (
     <Suspense
       fallback={
-        <output className="block p-6 text-sm text-muted-foreground">
-          Loading application…
+        <output className="flex justify-center items-center min-h-screen">
+          <DataLoader />
         </output>
       }
     >
