@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -16,8 +14,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Brand } from "@/components/auth/Brand";
 import { getAuthAdapter } from "@/lib/auth/adapter";
 import { authRoutes } from "@/lib/auth/types";
+import { Power } from "lucide-react";
 
 export function RetryRequirementsButton() {
   const router = useRouter();
@@ -58,19 +58,9 @@ export function RequirementsHeader({
   }
 
   return (
-    <header className="h-12 border-b dark:border-[#1f1f1f]">
-      <div className="mx-auto flex h-full max-w-[1040px] items-center justify-between gap-3 px-4">
-        <Link
-          href="/"
-          aria-label="FastMet Fleet home"
-          className="flex items-center gap-2 rounded-sm"
-        >
-          <Image src="/icon.png" alt="" width={24} height={24} />
-          <span className="text-[13px] font-semibold">
-            FastMet{" "}
-            <span className="font-normal text-muted-foreground">/ Fleet</span>
-          </span>
-        </Link>
+    <header className="border-b dark:border-[#1f1f1f]">
+      <div className="mx-auto flex min-h-18 w-full max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:px-8 lg:px-12">
+        <Brand />
         <AlertDialog
           onOpenChange={(open, details) => {
             if (!open && leaving) details.cancel();
@@ -82,13 +72,14 @@ export function RequirementsHeader({
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
+                size="sm"
                 disabled={submitting}
-                className="requirements-control h-8 rounded-[8px] px-3 text-xs font-medium"
+                aria-label="Sign out"
+                className="requirements-control h-9 rounded-[8px] px-3 text-sm font-medium"
               />
             }
           >
-            Sign out
+            <Power aria-hidden="true" />
           </AlertDialogTrigger>
           <AlertDialogContent
             initialFocus={cancel}
