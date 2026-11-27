@@ -14,7 +14,7 @@ export function AuthShell({ children }: Readonly<{ children: ReactNode }>) {
         href="#auth-content"
         className="sr-only z-50 rounded-md bg-background p-3 text-sm focus:not-sr-only focus:absolute focus:top-4 focus:left-4"
       >
-        Skip to form
+        Skip to main content
       </a>
       <header className="flex items-center justify-between gap-4 px-6 py-4 sm:px-10 lg:px-12 border-b">
         <Brand />

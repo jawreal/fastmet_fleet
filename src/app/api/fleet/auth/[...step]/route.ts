@@ -30,6 +30,7 @@ const headers = { "Cache-Control": "no-store" };
 const errorStatus = {
   INVALID_CODE: 401,
   INVALID_CREDENTIALS: 401,
+  APPLICATION_REJECTED: 403,
   CODE_EXPIRED: 410,
   CHALLENGE_EXPIRED: 401,
   STEP_UNAVAILABLE: 409,
@@ -48,7 +49,13 @@ async function handle(operation: () => Promise<unknown>) {
   } catch (error) {
     if (error instanceof AuthError) {
       return json(
-        { error: { code: error.code, message: error.message } },
+        {
+          error: {
+            code: error.code,
+            message: error.message,
+            rejectionReason: error.rejectionReason,
+          },
+        },
         errorStatus[error.code],
       );
     }

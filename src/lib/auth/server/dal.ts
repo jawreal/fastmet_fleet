@@ -48,19 +48,27 @@ export function eligibleFleetAccountFilter(): Filter<FleetAccount> {
   };
 }
 
-export async function findEligibleAccount(
+const rejectedAccountFilter: Filter<FleetAccount> = {
+  status: "rejected",
+  $or: [{ accountId: null }, { $expr: { $eq: ["$accountId", "$_id"] } }],
+};
+
+async function findFleetAccount(
   lookup: { companyEmail: string } | { _id: ObjectId },
+  eligibility = eligibleFleetAccountFilter(),
 ) {
   const filter: Filter<FleetAccount> = {
     ...lookup,
-    ...eligibleFleetAccountFilter(),
+    ...eligibility,
     password: { $type: "string", $ne: "" },
   };
   if (process.env.NODE_ENV !== "development")
     filter.developmentOnly = { $ne: true };
   return (await fleetDb()).accounts.findOne(filter, {
+    sort: { _id: -1 },
     projection: {
       status: 1,
+      rejectionReason: 1,
       accountId: 1,
       companyEmail: 1,
       companyName: 1,
@@ -71,6 +79,14 @@ export async function findEligibleAccount(
       mustChangePassword: 1,
     },
   });
+}
+
+export async function findFleetSignInAccount(companyEmail: string) {
+  // An active application takes precedence over earlier rejected applications.
+  return (
+    (await findFleetAccount({ companyEmail })) ??
+    findFleetAccount({ companyEmail }, rejectedAccountFilter)
+  );
 }
 
 export async function readFleetSessionToken() {
@@ -91,7 +107,12 @@ export async function readFleetSession() {
     idleUntil: { $gt: now },
   });
   if (!session) return null;
-  const account = await findEligibleAccount({ _id: session.accountId });
+  const lookup = { _id: session.accountId };
+  const account =
+    (await findFleetAccount(lookup)) ??
+    (session.status === "AUTHENTICATED"
+      ? await findFleetAccount(lookup, rejectedAccountFilter)
+      : null);
   if (!account || digest(account.password) !== session.passwordVersion)
     return null;
   if (

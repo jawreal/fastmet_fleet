@@ -77,10 +77,12 @@ export class AuthError extends Error {
       | "CHALLENGE_EXPIRED"
       | "STEP_UNAVAILABLE"
       | "INVALID_CREDENTIALS"
+      | "APPLICATION_REJECTED"
       | "INVALID_INPUT"
       | "RATE_LIMITED"
       | "UNAVAILABLE",
     message: string,
+    public readonly rejectionReason?: string,
   ) {
     super(message);
     this.name = "AuthError";
